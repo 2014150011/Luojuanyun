@@ -1,0 +1,37 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'com.example'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+dependencies {
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
+    implementation 'fr.opensagres.xdocreport:org.apache.poi.xwpf.converter.core:2.0.3'
+    implementation 'fr.opensagres.xdocreport:org.apache.poi.xwpf.converter.xhtml:2.0.3'
+    implementation 'org.jsoup:jsoup:1.17.2'
+}
+
+application {
+    mainClass = 'com.example.docx2html.DocxToHtml'
+}
+
+// build fat jar
+shadowJar {
+    archiveBaseName.set('docx2html')
+    archiveVersion.set('1.0.0')
+    archiveClassifier.set('all')
+    mergeServiceFiles()
+}
