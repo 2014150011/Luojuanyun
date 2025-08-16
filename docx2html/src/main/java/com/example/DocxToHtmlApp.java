@@ -10,6 +10,7 @@ import fr.opensagres.poi.xwpf.converter.core.FileImageExtractor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblGridCol;
 import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
@@ -29,11 +30,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
 public class DocxToHtmlApp {
+
+	private static final int A4_WIDTH_PX = 794; // ~8.27in * 96dpi
 
 	public static void main(String[] args) {
 		if (args.length < 2) {
@@ -79,8 +84,17 @@ public class DocxToHtmlApp {
 			html = ensureMetaUtf8(html);
 			html = embedImagesAsBase64(html, document.getAllPictures());
 			html = enhanceTables(html, document);
+			html = enhanceImages(html);
 
-			String markdown = FlexmarkHtmlConverter.builder().build().convert(html);
+			// Replace tables and images with tokens to preserve as raw HTML in Markdown
+			PlaceholderStore store = replaceTablesAndImagesWithTokens(html);
+
+			String markdown = FlexmarkHtmlConverter.builder().build().convert(store.tokenizedHtml);
+
+			// Replace tokens with raw HTML blocks to keep centering and width styles
+			for (Map.Entry<String, String> entry : store.tokenToHtml.entrySet()) {
+				markdown = markdown.replace(entry.getKey(), entry.getValue());
+			}
 
 			try (OutputStream os = new FileOutputStream(outputMdPath.toFile());
 				 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
@@ -128,6 +142,15 @@ public class DocxToHtmlApp {
 		return doc.outerHtml();
 	}
 
+	private static String enhanceImages(String html) {
+		Document doc = Jsoup.parse(html);
+		Elements imgs = doc.getElementsByTag("img");
+		for (Element img : imgs) {
+			appendInlineStyle(img, "display:block;margin:0 auto;max-width:" + A4_WIDTH_PX + "px;width:100%;height:auto;");
+		}
+		return doc.outerHtml();
+	}
+
 	private static String enhanceTables(String html, XWPFDocument xwpfDocument) {
 		Document doc = Jsoup.parse(html);
 		Elements htmlTables = doc.getElementsByTag("table");
@@ -138,7 +161,10 @@ public class DocxToHtmlApp {
 			Element htmlTable = htmlTables.get(i);
 			XWPFTable xTable = xwpfTables.get(i);
 
-			htmlTable.addClass("docx-table");
+			// Center table and fit A4 width
+			appendInlineStyle(htmlTable, "border-collapse:collapse;table-layout:fixed;" +
+				"margin-left:auto;margin-right:auto;" +
+				"max-width:" + A4_WIDTH_PX + "px;width:100%;box-sizing:border-box;");
 
 			List<Integer> colWidthsPx = extractColumnWidthsPx(xTable);
 			if (!colWidthsPx.isEmpty()) {
@@ -152,22 +178,24 @@ public class DocxToHtmlApp {
 				}
 				htmlTable.prependChild(colgroup);
 			}
-		}
 
-		// Inject CSS once
-		Element head = doc.head();
-		if (head.select("style#docx2html-style").isEmpty()) {
-			Element style = doc.createElement("style");
-			style.attr("id", "docx2html-style");
-			style.attr("type", "text/css");
-			style.appendText(
-				".docx-table{border-collapse:collapse;table-layout:fixed;}" +
-				".docx-table td,.docx-table th{border:1px solid #ccc;padding:4px;word-break:break-word;white-space:normal;}"
-			);
-			head.appendChild(style);
+			// Add inline styles to cells to ensure visible borders/padding
+			Elements cells = htmlTable.select("td, th");
+			for (Element cell : cells) {
+				appendInlineStyle(cell, "border:1px solid #ccc;padding:4px;word-break:break-word;white-space:normal;overflow-wrap:anywhere;");
+			}
 		}
 
 		return doc.outerHtml();
+	}
+
+	private static void appendInlineStyle(Element el, String styleToAppend) {
+		String style = el.hasAttr("style") ? el.attr("style") : "";
+		if (!style.endsWith(";") && !style.isEmpty()) {
+			style += ";";
+		}
+		style += styleToAppend;
+		el.attr("style", style);
 	}
 
 	private static List<Integer> extractColumnWidthsPx(XWPFTable table) {
@@ -203,6 +231,39 @@ public class DocxToHtmlApp {
 		return widthsPx;
 	}
 
+	private static PlaceholderStore replaceTablesAndImagesWithTokens(String html) {
+		Document doc = Jsoup.parse(html);
+		Map<String, String> tokenToHtml = new LinkedHashMap<>();
+		int tableIdx = 0;
+		int imgIdx = 0;
+
+		// Tables -> token
+		for (Element table : new ArrayList<>(doc.getElementsByTag("table"))) {
+			String token = "MDPH_TABLE_" + (tableIdx++);
+			String htmlBlock = table.outerHtml();
+			Element p = doc.createElement("p");
+			p.appendChild(new TextNode(token));
+			table.replaceWith(p);
+			tokenToHtml.put(token, htmlBlock);
+		}
+
+		// Images -> token (wrap in centered paragraph)
+		for (Element img : new ArrayList<>(doc.getElementsByTag("img"))) {
+			String token = "MDPH_IMG_" + (imgIdx++);
+			Element wrapper = doc.createElement("p");
+			wrapper.attr("style", "text-align:center;margin:8px 0;");
+			wrapper.appendChild(img.clone());
+			String htmlBlock = wrapper.outerHtml();
+			img.replaceWith(new TextNode(token));
+			tokenToHtml.put(token, htmlBlock);
+		}
+
+		PlaceholderStore store = new PlaceholderStore();
+		store.tokenizedHtml = doc.outerHtml();
+		store.tokenToHtml = tokenToHtml;
+		return store;
+	}
+
 	private static void deleteDirectoryQuietly(Path dir) {
 		if (dir == null) return;
 		try {
@@ -213,5 +274,10 @@ public class DocxToHtmlApp {
 					try { Files.deleteIfExists(path); } catch (IOException ignored) {}
 				});
 		} catch (IOException ignored) {}
+	}
+
+	private static class PlaceholderStore {
+		String tokenizedHtml;
+		Map<String, String> tokenToHtml;
 	}
 }
