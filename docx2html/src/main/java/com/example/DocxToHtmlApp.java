@@ -12,6 +12,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblGridCol;
+import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -36,8 +37,8 @@ public class DocxToHtmlApp {
 
 	public static void main(String[] args) {
 		if (args.length < 2) {
-			System.out.println("Usage: java -jar docx2html.jar <input.docx> <output.html>");
-			System.out.println("Or with Gradle: ./gradlew run --args=\"/abs/path/input.docx /abs/path/output.html\"");
+			System.out.println("Usage: java -jar docx2html.jar <input.docx> <output.md>");
+			System.out.println("Or with Gradle: gradle run -PappArgs=\"[/abs/input.docx,/abs/output.md]\"");
 			return;
 		}
 
@@ -45,7 +46,7 @@ public class DocxToHtmlApp {
 		Path outputPath = Paths.get(args[1]).toAbsolutePath().normalize();
 
 		try {
-			convertDocxToHtml(inputPath, outputPath);
+			convertDocxToMarkdown(inputPath, outputPath);
 			System.out.println("Converted: " + inputPath + " -> " + outputPath);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -53,14 +54,13 @@ public class DocxToHtmlApp {
 		}
 	}
 
-	public static void convertDocxToHtml(Path inputDocxPath, Path outputHtmlPath) throws Exception {
+	public static void convertDocxToMarkdown(Path inputDocxPath, Path outputMdPath) throws Exception {
 		Objects.requireNonNull(inputDocxPath, "inputDocxPath");
-		Objects.requireNonNull(outputHtmlPath, "outputHtmlPath");
+		Objects.requireNonNull(outputMdPath, "outputMdPath");
 
-		Files.createDirectories(outputHtmlPath.getParent());
+		Files.createDirectories(outputMdPath.getParent());
 
-		// Temporary folder to let the converter write images. We'll inline them after conversion and then delete this folder.
-		Path tempImagesDir = outputHtmlPath.getParent().resolve("images-" + UUID.randomUUID());
+		Path tempImagesDir = outputMdPath.getParent().resolve("images-" + UUID.randomUUID());
 		Files.createDirectories(tempImagesDir);
 
 		try (InputStream inputStream = new FileInputStream(inputDocxPath.toFile());
@@ -80,12 +80,13 @@ public class DocxToHtmlApp {
 			html = embedImagesAsBase64(html, document.getAllPictures());
 			html = enhanceTables(html, document);
 
-			try (OutputStream os = new FileOutputStream(outputHtmlPath.toFile());
+			String markdown = FlexmarkHtmlConverter.builder().build().convert(html);
+
+			try (OutputStream os = new FileOutputStream(outputMdPath.toFile());
 				 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
-				writer.write(html);
+				writer.write(markdown);
 			}
 		} finally {
-			// Clean up temp images dir
 			deleteDirectoryQuietly(tempImagesDir);
 		}
 	}
