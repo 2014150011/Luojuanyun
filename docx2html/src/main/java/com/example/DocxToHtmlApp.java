@@ -2,6 +2,7 @@ package com.example;
 
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFPictureData;
+import org.apache.poi.xwpf.usermodel.XWPFTable;
 import fr.opensagres.poi.xwpf.converter.xhtml.XHTMLConverter;
 import fr.opensagres.poi.xwpf.converter.xhtml.XHTMLOptions;
 import fr.opensagres.poi.xwpf.converter.core.BasicURIResolver;
@@ -10,6 +11,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblGridCol;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -19,10 +21,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
@@ -74,6 +78,7 @@ public class DocxToHtmlApp {
 			String html = new String(htmlOut.toByteArray(), StandardCharsets.UTF_8);
 			html = ensureMetaUtf8(html);
 			html = embedImagesAsBase64(html, document.getAllPictures());
+			html = enhanceTables(html, document);
 
 			try (OutputStream os = new FileOutputStream(outputHtmlPath.toFile());
 				 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
@@ -120,6 +125,81 @@ public class DocxToHtmlApp {
 			}
 		}
 		return doc.outerHtml();
+	}
+
+	private static String enhanceTables(String html, XWPFDocument xwpfDocument) {
+		Document doc = Jsoup.parse(html);
+		Elements htmlTables = doc.getElementsByTag("table");
+		List<XWPFTable> xwpfTables = xwpfDocument.getTables();
+
+		int pairCount = Math.min(htmlTables.size(), xwpfTables.size());
+		for (int i = 0; i < pairCount; i++) {
+			Element htmlTable = htmlTables.get(i);
+			XWPFTable xTable = xwpfTables.get(i);
+
+			htmlTable.addClass("docx-table");
+
+			List<Integer> colWidthsPx = extractColumnWidthsPx(xTable);
+			if (!colWidthsPx.isEmpty()) {
+				Element colgroup = doc.createElement("colgroup");
+				for (Integer w : colWidthsPx) {
+					Element col = doc.createElement("col");
+					if (w != null && w > 0) {
+						col.attr("style", "width: " + w + "px");
+					}
+					colgroup.appendChild(col);
+				}
+				htmlTable.prependChild(colgroup);
+			}
+		}
+
+		// Inject CSS once
+		Element head = doc.head();
+		if (head.select("style#docx2html-style").isEmpty()) {
+			Element style = doc.createElement("style");
+			style.attr("id", "docx2html-style");
+			style.attr("type", "text/css");
+			style.appendText(
+				".docx-table{border-collapse:collapse;table-layout:fixed;}" +
+				".docx-table td,.docx-table th{border:1px solid #ccc;padding:4px;word-break:break-word;white-space:normal;}"
+			);
+			head.appendChild(style);
+		}
+
+		return doc.outerHtml();
+	}
+
+	private static List<Integer> extractColumnWidthsPx(XWPFTable table) {
+		List<Integer> widthsPx = new ArrayList<>();
+		if (table == null || table.getCTTbl() == null || table.getCTTbl().getTblGrid() == null) {
+			return widthsPx;
+		}
+		List<CTTblGridCol> gridCols = table.getCTTbl().getTblGrid().getGridColList();
+		for (CTTblGridCol col : gridCols) {
+			Object wObj = col.getW();
+			if (wObj != null) {
+				long twips;
+				if (wObj instanceof BigInteger) {
+					twips = ((BigInteger) wObj).longValue();
+				} else if (wObj instanceof Long) {
+					twips = (Long) wObj;
+				} else if (wObj instanceof Integer) {
+					twips = ((Integer) wObj).longValue();
+				} else {
+					try {
+						twips = Long.parseLong(wObj.toString());
+					} catch (NumberFormatException e) {
+						widthsPx.add(null);
+						continue;
+					}
+				}
+				int px = (int) Math.round(twips / 15.0); // 1 px ≈ 15 twips (96 dpi)
+				widthsPx.add(Math.max(px, 1));
+			} else {
+				widthsPx.add(null);
+			}
+		}
+		return widthsPx;
 	}
 
 	private static void deleteDirectoryQuietly(Path dir) {
