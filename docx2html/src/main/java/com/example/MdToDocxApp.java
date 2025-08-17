@@ -328,31 +328,28 @@ public class MdToDocxApp {
 	private static ListNumberingIds ensureListNumberings(XWPFDocument xdoc) {
 		XWPFNumbering numbering = xdoc.createNumbering();
 
-		// Outside bullets: •, – , ·
+		// Outside bullets: use the same symbol for all levels (•)
 		CTAbstractNum outBulAbs = CTAbstractNum.Factory.newInstance();
 		for (int lvl = 0; lvl < 3; lvl++) {
 			outBulAbs.addNewLvl();
 			CTLvl l = outBulAbs.getLvlArray(lvl);
 			l.setIlvl(BigInteger.valueOf(lvl));
 			l.addNewNumFmt().setVal(STNumberFormat.BULLET);
-			String sym = lvl == 0 ? "•" : (lvl == 1 ? "–" : "·");
-			l.addNewLvlText().setVal(sym);
+			l.addNewLvlText().setVal("•");
 			l.addNewStart().setVal(BigInteger.ONE);
 			l.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720 + lvl * 360));
 		}
 		BigInteger outBulAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(outBulAbs));
 		BigInteger outBulNumId = numbering.addNum(outBulAbsId);
 
-		// Outside decimal: 1., a), i.
+		// Outside decimal: hierarchical 1., 1.1, 1.1.1
 		CTAbstractNum outDecAbs = CTAbstractNum.Factory.newInstance();
 		for (int lvl = 0; lvl < 3; lvl++) {
 			outDecAbs.addNewLvl();
 			CTLvl l = outDecAbs.getLvlArray(lvl);
 			l.setIlvl(BigInteger.valueOf(lvl));
-			if (lvl == 0) l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
-			else if (lvl == 1) l.addNewNumFmt().setVal(STNumberFormat.LOWER_LETTER);
-			else l.addNewNumFmt().setVal(STNumberFormat.LOWER_ROMAN);
-			String txt = lvl == 0 ? "%1." : (lvl == 1 ? "%2)" : "%3.");
+			l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
+			String txt = lvl == 0 ? "%1." : (lvl == 1 ? "%1.%2." : "%1.%2.%3.");
 			l.addNewLvlText().setVal(txt);
 			l.addNewStart().setVal(BigInteger.ONE);
 			l.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720 + lvl * 360));
@@ -360,31 +357,28 @@ public class MdToDocxApp {
 		BigInteger outDecAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(outDecAbs));
 		BigInteger outDecNumId = numbering.addNum(outDecAbsId);
 
-		// Inside bullets: ▪, – , ·
+		// Inside bullets: use the same symbol for all levels (▪)
 		CTAbstractNum inBulAbs = CTAbstractNum.Factory.newInstance();
 		for (int lvl = 0; lvl < 3; lvl++) {
 			inBulAbs.addNewLvl();
 			CTLvl l = inBulAbs.getLvlArray(lvl);
 			l.setIlvl(BigInteger.valueOf(lvl));
 			l.addNewNumFmt().setVal(STNumberFormat.BULLET);
-			String sym = lvl == 0 ? "▪" : (lvl == 1 ? "–" : "·");
-			l.addNewLvlText().setVal(sym);
+			l.addNewLvlText().setVal("▪");
 			l.addNewStart().setVal(BigInteger.ONE);
 			l.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720 + lvl * 360));
 		}
 		BigInteger inBulAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(inBulAbs));
 		BigInteger inBulNumId = numbering.addNum(inBulAbsId);
 
-		// Inside decimal: (1), (a), (i)
+		// Inside decimal: hierarchical 1., 1.1, 1.1.1
 		CTAbstractNum inDecAbs = CTAbstractNum.Factory.newInstance();
 		for (int lvl = 0; lvl < 3; lvl++) {
 			inDecAbs.addNewLvl();
 			CTLvl l = inDecAbs.getLvlArray(lvl);
 			l.setIlvl(BigInteger.valueOf(lvl));
-			if (lvl == 0) l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
-			else if (lvl == 1) l.addNewNumFmt().setVal(STNumberFormat.LOWER_LETTER);
-			else l.addNewNumFmt().setVal(STNumberFormat.LOWER_ROMAN);
-			String txt = lvl == 0 ? "(%1)" : (lvl == 1 ? "(%2)" : "(%3)");
+			l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
+			String txt = lvl == 0 ? "%1." : (lvl == 1 ? "%1.%2." : "%1.%2.%3.");
 			l.addNewLvlText().setVal(txt);
 			l.addNewStart().setVal(BigInteger.ONE);
 			l.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720 + lvl * 360));
