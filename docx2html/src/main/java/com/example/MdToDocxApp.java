@@ -342,15 +342,19 @@ public class MdToDocxApp {
 		BigInteger outBulAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(outBulAbs));
 		BigInteger outBulNumId = numbering.addNum(outBulAbsId);
 
-		// Outside decimal: hierarchical 1., 1.1, 1.1.1
+		// Outside ordered: level 0 numeric, nested levels use bullet to avoid inner '1、'
 		CTAbstractNum outDecAbs = CTAbstractNum.Factory.newInstance();
 		for (int lvl = 0; lvl < 3; lvl++) {
 			outDecAbs.addNewLvl();
 			CTLvl l = outDecAbs.getLvlArray(lvl);
 			l.setIlvl(BigInteger.valueOf(lvl));
-			l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
-			String txt = lvl == 0 ? "%1." : (lvl == 1 ? "%1.%2." : "%1.%2.%3.");
-			l.addNewLvlText().setVal(txt);
+			if (lvl == 0) {
+				l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
+				l.addNewLvlText().setVal("%1.");
+			} else {
+				l.addNewNumFmt().setVal(STNumberFormat.BULLET);
+				l.addNewLvlText().setVal("·");
+			}
 			l.addNewStart().setVal(BigInteger.ONE);
 			l.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720 + lvl * 360));
 		}
@@ -371,15 +375,19 @@ public class MdToDocxApp {
 		BigInteger inBulAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(inBulAbs));
 		BigInteger inBulNumId = numbering.addNum(inBulAbsId);
 
-		// Inside decimal: hierarchical 1., 1.1, 1.1.1
+		// Inside ordered: level 0 numeric, nested levels use bullet to avoid inner '1、'
 		CTAbstractNum inDecAbs = CTAbstractNum.Factory.newInstance();
 		for (int lvl = 0; lvl < 3; lvl++) {
 			inDecAbs.addNewLvl();
 			CTLvl l = inDecAbs.getLvlArray(lvl);
 			l.setIlvl(BigInteger.valueOf(lvl));
-			l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
-			String txt = lvl == 0 ? "%1." : (lvl == 1 ? "%1.%2." : "%1.%2.%3.");
-			l.addNewLvlText().setVal(txt);
+			if (lvl == 0) {
+				l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
+				l.addNewLvlText().setVal("%1.");
+			} else {
+				l.addNewNumFmt().setVal(STNumberFormat.BULLET);
+				l.addNewLvlText().setVal("·");
+			}
 			l.addNewStart().setVal(BigInteger.ONE);
 			l.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720 + lvl * 360));
 		}
