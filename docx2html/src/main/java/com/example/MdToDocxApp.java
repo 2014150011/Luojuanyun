@@ -78,6 +78,7 @@ public class MdToDocxApp {
 				Element el = children.get(i);
 				if (isSmallHeading(el) && i + 1 < children.size() && isParagraphish(children.get(i + 1))) {
 					appendInlineHeadingWithParagraph(xdoc, el, children.get(i + 1));
+					state.seenAnyHeading = true;
 					i++; // skip next since merged
 				} else {
 					appendBlockElementToDoc(xdoc, el, listIds, 0, state);
@@ -120,28 +121,34 @@ public class MdToDocxApp {
 			case "h1": {
 				boolean center = !state.mainTitleDone;
 				state.mainTitleDone = true;
+				state.seenAnyHeading = true;
 				createParagraphFromInline(xdoc, el, 26, true, center, "Heading1");
 				break;
 			}
 			case "h2": {
-				boolean center = !state.mainTitleDone && !hasAnyHeadingBefore(state);
+				boolean center = !state.mainTitleDone && !state.seenAnyHeading;
 				if (!state.mainTitleDone && center) state.mainTitleDone = true;
+				state.seenAnyHeading = true;
 				createParagraphFromInline(xdoc, el, 22, true, center, "Heading2");
 				break;
 			}
 			case "h3": {
-				boolean center = !state.mainTitleDone && !hasAnyHeadingBefore(state);
+				boolean center = !state.mainTitleDone && !state.seenAnyHeading;
 				if (!state.mainTitleDone && center) state.mainTitleDone = true;
+				state.seenAnyHeading = true;
 				createParagraphFromInline(xdoc, el, 18, true, center, "Heading3");
 				break;
 			}
 			case "h4":
+				state.seenAnyHeading = true;
 				createParagraphFromInline(xdoc, el, 16, true, false, "Heading4");
 				break;
 			case "h5":
+				state.seenAnyHeading = true;
 				createParagraphFromInline(xdoc, el, 14, true, false, "Heading5");
 				break;
 			case "h6":
+				state.seenAnyHeading = true;
 				createParagraphFromInline(xdoc, el, 12, true, false, "Heading6");
 				break;
 			case "p":
@@ -161,10 +168,10 @@ public class MdToDocxApp {
 				createCodeBlock(xdoc, el);
 				break;
 			case "ul":
-				appendList(xdoc, el, listIds, false, listLevel);
+				appendList(xdoc, el, listIds, false, listLevel, state);
 				break;
 			case "ol":
-				appendList(xdoc, el, listIds, true, listLevel);
+				appendList(xdoc, el, listIds, true, listLevel, state);
 				break;
 			case "hr": {
 				XWPFParagraph p = xdoc.createParagraph();
@@ -177,11 +184,6 @@ public class MdToDocxApp {
 			default:
 				createParagraphFromInline(xdoc, el, 12, false, isCentered(el), null);
 		}
-	}
-
-	private static boolean hasAnyHeadingBefore(RenderState state) {
-		// We only need to know if main title has been consumed; this helper remains for clarity
-		return state.mainTitleDone;
 	}
 
 	private static void createParagraphFromInline(XWPFDocument xdoc, Element el, int fontSize, boolean bold, boolean centered, String styleId) {
@@ -296,8 +298,13 @@ public class MdToDocxApp {
 		return classAttr.contains("text-center") || classAttr.contains("center");
 	}
 
-	private static void appendList(XWPFDocument xdoc, Element listEl, ListNumberingIds ids, boolean ordered, int level) {
-		BigInteger numId = ordered ? ids.decimalNumId : ids.bulletNumId;
+	private static void appendList(XWPFDocument xdoc, Element listEl, ListNumberingIds ids, boolean ordered, int level, RenderState state) {
+		BigInteger numId;
+		if (state.seenAnyHeading) {
+			numId = ordered ? ids.insideDecimalNumId : ids.insideBulletNumId;
+		} else {
+			numId = ordered ? ids.outsideDecimalNumId : ids.outsideBulletNumId;
+		}
 		for (Element li : listEl.children()) {
 			if (!li.tagName().equalsIgnoreCase("li")) continue;
 			Element liLine = li.clone();
@@ -310,9 +317,9 @@ public class MdToDocxApp {
 			for (Element nested : li.children()) {
 				String t = nested.tagName().toLowerCase();
 				if (t.equals("ul")) {
-					appendList(xdoc, nested, ids, false, level + 1);
+					appendList(xdoc, nested, ids, false, level + 1, state);
 				} else if (t.equals("ol")) {
-					appendList(xdoc, nested, ids, true, level + 1);
+					appendList(xdoc, nested, ids, true, level + 1, state);
 				}
 			}
 		}
@@ -321,33 +328,75 @@ public class MdToDocxApp {
 	private static ListNumberingIds ensureListNumberings(XWPFDocument xdoc) {
 		XWPFNumbering numbering = xdoc.createNumbering();
 
-		CTAbstractNum bulletAbstract = CTAbstractNum.Factory.newInstance();
-		bulletAbstract.addNewLvl();
-		CTLvl bulletLvl = bulletAbstract.getLvlArray(0);
-		bulletLvl.setIlvl(BigInteger.ZERO);
-		bulletLvl.addNewNumFmt().setVal(STNumberFormat.BULLET);
-		bulletLvl.addNewLvlText().setVal("•");
-		bulletLvl.addNewStart().setVal(BigInteger.ONE);
-		bulletLvl.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720));
+		// Outside bullets: •, – , ·
+		CTAbstractNum outBulAbs = CTAbstractNum.Factory.newInstance();
+		for (int lvl = 0; lvl < 3; lvl++) {
+			outBulAbs.addNewLvl();
+			CTLvl l = outBulAbs.getLvlArray(lvl);
+			l.setIlvl(BigInteger.valueOf(lvl));
+			l.addNewNumFmt().setVal(STNumberFormat.BULLET);
+			String sym = lvl == 0 ? "•" : (lvl == 1 ? "–" : "·");
+			l.addNewLvlText().setVal(sym);
+			l.addNewStart().setVal(BigInteger.ONE);
+			l.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720 + lvl * 360));
+		}
+		BigInteger outBulAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(outBulAbs));
+		BigInteger outBulNumId = numbering.addNum(outBulAbsId);
 
-		BigInteger bulletAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(bulletAbstract));
-		BigInteger bulletNumId = numbering.addNum(bulletAbsId);
+		// Outside decimal: 1., a), i.
+		CTAbstractNum outDecAbs = CTAbstractNum.Factory.newInstance();
+		for (int lvl = 0; lvl < 3; lvl++) {
+			outDecAbs.addNewLvl();
+			CTLvl l = outDecAbs.getLvlArray(lvl);
+			l.setIlvl(BigInteger.valueOf(lvl));
+			if (lvl == 0) l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
+			else if (lvl == 1) l.addNewNumFmt().setVal(STNumberFormat.LOWER_LETTER);
+			else l.addNewNumFmt().setVal(STNumberFormat.LOWER_ROMAN);
+			String txt = lvl == 0 ? "%1." : (lvl == 1 ? "%2)" : "%3.");
+			l.addNewLvlText().setVal(txt);
+			l.addNewStart().setVal(BigInteger.ONE);
+			l.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720 + lvl * 360));
+		}
+		BigInteger outDecAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(outDecAbs));
+		BigInteger outDecNumId = numbering.addNum(outDecAbsId);
 
-		CTAbstractNum decAbstract = CTAbstractNum.Factory.newInstance();
-		decAbstract.addNewLvl();
-		CTLvl decLvl = decAbstract.getLvlArray(0);
-		decLvl.setIlvl(BigInteger.ZERO);
-		decLvl.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
-		decLvl.addNewLvlText().setVal("%1.");
-		decLvl.addNewStart().setVal(BigInteger.ONE);
-		decLvl.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720));
+		// Inside bullets: ▪, – , ·
+		CTAbstractNum inBulAbs = CTAbstractNum.Factory.newInstance();
+		for (int lvl = 0; lvl < 3; lvl++) {
+			inBulAbs.addNewLvl();
+			CTLvl l = inBulAbs.getLvlArray(lvl);
+			l.setIlvl(BigInteger.valueOf(lvl));
+			l.addNewNumFmt().setVal(STNumberFormat.BULLET);
+			String sym = lvl == 0 ? "▪" : (lvl == 1 ? "–" : "·");
+			l.addNewLvlText().setVal(sym);
+			l.addNewStart().setVal(BigInteger.ONE);
+			l.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720 + lvl * 360));
+		}
+		BigInteger inBulAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(inBulAbs));
+		BigInteger inBulNumId = numbering.addNum(inBulAbsId);
 
-		BigInteger decAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(decAbstract));
-		BigInteger decNumId = numbering.addNum(decAbsId);
+		// Inside decimal: (1), (a), (i)
+		CTAbstractNum inDecAbs = CTAbstractNum.Factory.newInstance();
+		for (int lvl = 0; lvl < 3; lvl++) {
+			inDecAbs.addNewLvl();
+			CTLvl l = inDecAbs.getLvlArray(lvl);
+			l.setIlvl(BigInteger.valueOf(lvl));
+			if (lvl == 0) l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
+			else if (lvl == 1) l.addNewNumFmt().setVal(STNumberFormat.LOWER_LETTER);
+			else l.addNewNumFmt().setVal(STNumberFormat.LOWER_ROMAN);
+			String txt = lvl == 0 ? "(%1)" : (lvl == 1 ? "(%2)" : "(%3)");
+			l.addNewLvlText().setVal(txt);
+			l.addNewStart().setVal(BigInteger.ONE);
+			l.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720 + lvl * 360));
+		}
+		BigInteger inDecAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(inDecAbs));
+		BigInteger inDecNumId = numbering.addNum(inDecAbsId);
 
 		ListNumberingIds ids = new ListNumberingIds();
-		ids.bulletNumId = bulletNumId;
-		ids.decimalNumId = decNumId;
+		ids.outsideBulletNumId = outBulNumId;
+		ids.outsideDecimalNumId = outDecNumId;
+		ids.insideBulletNumId = inBulNumId;
+		ids.insideDecimalNumId = inDecNumId;
 		return ids;
 	}
 
@@ -364,11 +413,14 @@ public class MdToDocxApp {
 	}
 
 	private static class ListNumberingIds {
-		BigInteger bulletNumId;
-		BigInteger decimalNumId;
+		BigInteger outsideBulletNumId;
+		BigInteger outsideDecimalNumId;
+		BigInteger insideBulletNumId;
+		BigInteger insideDecimalNumId;
 	}
 
 	private static class RenderState {
 		boolean mainTitleDone = false;
+		boolean seenAnyHeading = false;
 	}
 }
