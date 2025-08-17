@@ -110,6 +110,7 @@ public class MdToDocxApp {
 		p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 		p.setSpacingBefore(0);
 		p.setSpacingAfter(0);
+		p.setAlignment(ParagraphAlignment.LEFT);
 		// heading part (bold, slightly larger)
 		int hSize = headingFontSize(heading.tagName());
 		appendInlineContentWithOverrides(p, heading, hSize, true, false, false, false);
@@ -213,7 +214,7 @@ public class MdToDocxApp {
 		p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 		p.setSpacingBefore(0);
 		p.setSpacingAfter(0);
-		if (centered) p.setAlignment(ParagraphAlignment.CENTER);
+		p.setAlignment(centered ? ParagraphAlignment.CENTER : ParagraphAlignment.LEFT);
 		if (styleId != null) p.setStyle(styleId);
 		appendInlineContent(p, el, fontSize, bold, false);
 	}
@@ -357,6 +358,7 @@ public class MdToDocxApp {
 			p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 			p.setSpacingBefore(0);
 			p.setSpacingAfter(0);
+			p.setAlignment(ParagraphAlignment.LEFT);
 			p.setIndentationRight(720);
 			p.setNumID(numId);
 			p.setNumILvl(BigInteger.valueOf(level));
