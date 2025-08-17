@@ -8,6 +8,10 @@ import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFNumbering;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STNumberFormat;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -16,6 +20,7 @@ import org.jsoup.select.Elements;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,42 +67,43 @@ public class MdToDocxApp {
 		doc.select("table, thead, tbody, tfoot, tr, td, th, img, figure").remove();
 
 		try (XWPFDocument xdoc = new XWPFDocument(); OutputStream os = new FileOutputStream(outputDocxPath.toFile())) {
+			ListNumberingIds listIds = ensureListNumberings(xdoc);
 			for (Element el : doc.body().children()) {
-				appendBlockElementToDoc(xdoc, el);
+				appendBlockElementToDoc(xdoc, el, listIds, 0);
 			}
 			xdoc.write(os);
 		}
 	}
 
-	private static void appendBlockElementToDoc(XWPFDocument xdoc, Element el) {
+	private static void appendBlockElementToDoc(XWPFDocument xdoc, Element el, ListNumberingIds listIds, int listLevel) {
 		String tag = el.tagName().toLowerCase();
 		switch (tag) {
 			case "h1":
-				createParagraphFromInline(xdoc, el, 26, true, isCentered(el));
+				createParagraphFromInline(xdoc, el, 26, true, isCentered(el), "Heading1");
 				break;
 			case "h2":
-				createParagraphFromInline(xdoc, el, 22, true, isCentered(el));
+				createParagraphFromInline(xdoc, el, 22, true, isCentered(el), "Heading2");
 				break;
 			case "h3":
-				createParagraphFromInline(xdoc, el, 18, true, isCentered(el));
+				createParagraphFromInline(xdoc, el, 18, true, isCentered(el), "Heading3");
 				break;
 			case "h4":
-				createParagraphFromInline(xdoc, el, 16, true, isCentered(el));
+				createParagraphFromInline(xdoc, el, 16, true, isCentered(el), "Heading4");
 				break;
 			case "h5":
-				createParagraphFromInline(xdoc, el, 14, true, isCentered(el));
+				createParagraphFromInline(xdoc, el, 14, true, isCentered(el), "Heading5");
 				break;
 			case "h6":
-				createParagraphFromInline(xdoc, el, 12, true, isCentered(el));
+				createParagraphFromInline(xdoc, el, 12, true, isCentered(el), "Heading6");
 				break;
 			case "p":
 			case "div":
 			case "center":
-				createParagraphFromInline(xdoc, el, 12, false, isCentered(el) || tag.equals("center"));
+				createParagraphFromInline(xdoc, el, 12, false, isCentered(el) || tag.equals("center"), null);
 				break;
 			case "blockquote": {
 				XWPFParagraph p = xdoc.createParagraph();
-				p.setIndentationLeft(720); // 720 twips = 0.5 inch
+				p.setIndentationLeft(720);
 				if (isCentered(el)) p.setAlignment(ParagraphAlignment.CENTER);
 				appendInlineContent(p, el, 12, false);
 				break;
@@ -106,11 +112,10 @@ public class MdToDocxApp {
 				createCodeBlock(xdoc, el);
 				break;
 			case "ul":
+				appendList(xdoc, el, listIds, false, listLevel);
+				break;
 			case "ol":
-				for (Element li : el.children()) {
-					if (!li.tagName().equalsIgnoreCase("li")) continue;
-					createParagraphFromInline(xdoc, li, 12, false, isCentered(el));
-				}
+				appendList(xdoc, el, listIds, true, listLevel);
 				break;
 			case "hr": {
 				XWPFParagraph p = xdoc.createParagraph();
@@ -119,14 +124,14 @@ public class MdToDocxApp {
 				break;
 			}
 			default:
-				// Fallback: treat as paragraph
-				createParagraphFromInline(xdoc, el, 12, false, isCentered(el));
+				createParagraphFromInline(xdoc, el, 12, false, isCentered(el), null);
 		}
 	}
 
-	private static void createParagraphFromInline(XWPFDocument xdoc, Element el, int fontSize, boolean bold, boolean centered) {
+	private static void createParagraphFromInline(XWPFDocument xdoc, Element el, int fontSize, boolean bold, boolean centered, String styleId) {
 		XWPFParagraph p = xdoc.createParagraph();
 		if (centered) p.setAlignment(ParagraphAlignment.CENTER);
+		if (styleId != null) p.setStyle(styleId);
 		appendInlineContent(p, el, fontSize, bold);
 	}
 
@@ -226,5 +231,69 @@ public class MdToDocxApp {
 		if (style.contains("text-align:center") || style.contains("text-align: center")) return true;
 		String classAttr = el.className().toLowerCase();
 		return classAttr.contains("text-center") || classAttr.contains("center");
+	}
+
+	private static void appendList(XWPFDocument xdoc, Element listEl, ListNumberingIds ids, boolean ordered, int level) {
+		BigInteger numId = ordered ? ids.decimalNumId : ids.bulletNumId;
+		for (Element li : listEl.children()) {
+			if (!li.tagName().equalsIgnoreCase("li")) continue;
+			// Paragraph for this list item (exclude nested lists content for the text line)
+			Element liLine = li.clone();
+			liLine.select("ul,ol").remove();
+			XWPFParagraph p = xdoc.createParagraph();
+			p.setNumID(numId);
+			p.setNumILvl(BigInteger.valueOf(level));
+			appendInlineContent(p, liLine, 12, false);
+			// Nested lists
+			for (Element nested : li.children()) {
+				String t = nested.tagName().toLowerCase();
+				if (t.equals("ul")) {
+					appendList(xdoc, nested, ids, false, level + 1);
+				} else if (t.equals("ol")) {
+					appendList(xdoc, nested, ids, true, level + 1);
+				}
+			}
+		}
+	}
+
+	private static ListNumberingIds ensureListNumberings(XWPFDocument xdoc) {
+		XWPFNumbering numbering = xdoc.createNumbering();
+
+		// Bullet abstract numbering
+		CTAbstractNum bulletAbstract = CTAbstractNum.Factory.newInstance();
+		bulletAbstract.addNewLvl();
+		CTLvl bulletLvl = bulletAbstract.getLvlArray(0);
+		bulletLvl.setIlvl(BigInteger.ZERO);
+		bulletLvl.addNewNumFmt().setVal(STNumberFormat.BULLET);
+		bulletLvl.addNewLvlText().setVal("•");
+		bulletLvl.addNewStart().setVal(BigInteger.ONE);
+		// add some indentation for bullets
+		bulletLvl.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720));
+
+		BigInteger bulletAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(bulletAbstract));
+		BigInteger bulletNumId = numbering.addNum(bulletAbsId);
+
+		// Decimal abstract numbering
+		CTAbstractNum decAbstract = CTAbstractNum.Factory.newInstance();
+		decAbstract.addNewLvl();
+		CTLvl decLvl = decAbstract.getLvlArray(0);
+		decLvl.setIlvl(BigInteger.ZERO);
+		decLvl.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
+		decLvl.addNewLvlText().setVal("%1.");
+		decLvl.addNewStart().setVal(BigInteger.ONE);
+		decLvl.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720));
+
+		BigInteger decAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(decAbstract));
+		BigInteger decNumId = numbering.addNum(decAbsId);
+
+		ListNumberingIds ids = new ListNumberingIds();
+		ids.bulletNumId = bulletNumId;
+		ids.decimalNumId = decNumId;
+		return ids;
+	}
+
+	private static class ListNumberingIds {
+		BigInteger bulletNumId;
+		BigInteger decimalNumId;
 	}
 }
