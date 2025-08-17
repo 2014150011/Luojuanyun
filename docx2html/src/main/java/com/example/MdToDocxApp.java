@@ -13,6 +13,8 @@ import org.apache.poi.xwpf.usermodel.LineSpacingRule;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STNumberFormat;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFonts;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRPr;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -102,7 +104,7 @@ public class MdToDocxApp {
 		appendInlineContentWithOverrides(p, heading, hSize, true, false, false);
 		XWPFRun sep = p.createRun();
 		sep.setText(" ");
-		sep.setKerning(0);
+		applyRunFontDefaults(sep, true);
 		// content part
 		appendInlineContent(p, paragraphEl, 12, false);
 	}
@@ -111,22 +113,22 @@ public class MdToDocxApp {
 		String tag = el.tagName().toLowerCase();
 		switch (tag) {
 			case "h1":
-				createParagraphFromInline(xdoc, el, 26, true, isCentered(el), "Heading1");
+				createParagraphFromInline(xdoc, el, 26, true, true, "Heading1");
 				break;
 			case "h2":
-				createParagraphFromInline(xdoc, el, 22, true, isCentered(el), "Heading2");
+				createParagraphFromInline(xdoc, el, 22, true, true, "Heading2");
 				break;
 			case "h3":
-				createParagraphFromInline(xdoc, el, 18, true, isCentered(el), "Heading3");
+				createParagraphFromInline(xdoc, el, 18, true, true, "Heading3");
 				break;
 			case "h4":
-				createParagraphFromInline(xdoc, el, 16, true, isCentered(el), "Heading4");
+				createParagraphFromInline(xdoc, el, 16, true, true, "Heading4");
 				break;
 			case "h5":
-				createParagraphFromInline(xdoc, el, 14, true, isCentered(el), "Heading5");
+				createParagraphFromInline(xdoc, el, 14, true, true, "Heading5");
 				break;
 			case "h6":
-				createParagraphFromInline(xdoc, el, 12, true, isCentered(el), "Heading6");
+				createParagraphFromInline(xdoc, el, 12, true, true, "Heading6");
 				break;
 			case "p":
 			case "div":
@@ -155,7 +157,7 @@ public class MdToDocxApp {
 				p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 				XWPFRun r = p.createRun();
 				r.setText("────────");
-				r.setKerning(0);
+				applyRunFontDefaults(r, false);
 				break;
 			}
 			default:
@@ -195,15 +197,15 @@ public class MdToDocxApp {
 						String codeText = child.text();
 						XWPFRun r = p.createRun();
 						r.setText(codeText);
-						r.setFontFamily("Courier New");
+						r.setFontFamily("Consolas");
 						r.setFontSize(baseFontSize);
-						r.setKerning(0);
+						applyRunFontDefaults(r, false);
 						break;
 					}
 					case "br": {
 						XWPFRun r = p.createRun();
 						r.addBreak();
-						r.setKerning(0);
+						applyRunFontDefaults(r, false);
 						break;
 					}
 					case "span":
@@ -237,7 +239,7 @@ public class MdToDocxApp {
 			r.setBold(bold);
 			r.setItalic(italic);
 			if (underline) r.setUnderline(UnderlinePatterns.SINGLE);
-			r.setKerning(0);
+			applyRunFontDefaults(r, false);
 			if (i < parts.length - 1) r.addBreak();
 		}
 	}
@@ -249,18 +251,18 @@ public class MdToDocxApp {
 			if (node instanceof TextNode) {
 				String text = ((TextNode) node).text();
 				XWPFRun r = p.createRun();
-				r.setFontFamily("Courier New");
+				r.setFontFamily("Consolas");
 				r.setText(text);
 				r.addBreak();
-				r.setKerning(0);
+				applyRunFontDefaults(r, false);
 			} else if (node instanceof Element) {
 				Element child = (Element) node;
 				if (child.tagName().equalsIgnoreCase("code")) {
 					XWPFRun r = p.createRun();
-					r.setFontFamily("Courier New");
+					r.setFontFamily("Consolas");
 					r.setText(child.text());
 					r.addBreak();
-					r.setKerning(0);
+					applyRunFontDefaults(r, false);
 				}
 			}
 		}
@@ -328,6 +330,21 @@ public class MdToDocxApp {
 		ids.bulletNumId = bulletNumId;
 		ids.decimalNumId = decNumId;
 		return ids;
+	}
+
+	private static void applyRunFontDefaults(XWPFRun run, boolean isHeading) {
+		// Standardize fonts to avoid odd spacing between CJK and Latin chars
+		// ASCII/Western
+		run.setFontFamily("Calibri");
+		// East Asia (CJK)
+		CTRPr rpr = run.getCTR().isSetRPr() ? run.getCTR().getRPr() : run.getCTR().addNewRPr();
+		CTFonts fonts = rpr.addNewRFonts();
+		fonts.setAscii("Calibri");
+		fonts.setHAnsi("Calibri");
+		fonts.setCs("Calibri");
+		fonts.setEastAsia("Microsoft YaHei");
+		// Remove kerning to avoid expanded spacing
+		run.setKerning(0);
 	}
 
 	private static class ListNumberingIds {
