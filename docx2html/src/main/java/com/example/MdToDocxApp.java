@@ -72,6 +72,7 @@ public class MdToDocxApp {
 
 		try (XWPFDocument xdoc = new XWPFDocument(); OutputStream os = new FileOutputStream(outputDocxPath.toFile())) {
 			ListNumberingIds listIds = ensureListNumberings(xdoc);
+			RenderState state = new RenderState();
 			List<Element> children = new ArrayList<>(doc.body().children());
 			for (int i = 0; i < children.size(); i++) {
 				Element el = children.get(i);
@@ -79,7 +80,7 @@ public class MdToDocxApp {
 					appendInlineHeadingWithParagraph(xdoc, el, children.get(i + 1));
 					i++; // skip next since merged
 				} else {
-					appendBlockElementToDoc(xdoc, el, listIds, 0);
+					appendBlockElementToDoc(xdoc, el, listIds, 0, state);
 				}
 			}
 			xdoc.write(os);
@@ -109,26 +110,39 @@ public class MdToDocxApp {
 		appendInlineContent(p, paragraphEl, 12, false);
 	}
 
-	private static void appendBlockElementToDoc(XWPFDocument xdoc, Element el, ListNumberingIds listIds, int listLevel) {
+	private static boolean isHeadingTag(String tag) {
+		return tag.equals("h1") || tag.equals("h2") || tag.equals("h3") || tag.equals("h4") || tag.equals("h5") || tag.equals("h6");
+	}
+
+	private static void appendBlockElementToDoc(XWPFDocument xdoc, Element el, ListNumberingIds listIds, int listLevel, RenderState state) {
 		String tag = el.tagName().toLowerCase();
 		switch (tag) {
-			case "h1":
-				createParagraphFromInline(xdoc, el, 26, true, true, "Heading1");
+			case "h1": {
+				boolean center = !state.mainTitleDone;
+				state.mainTitleDone = true;
+				createParagraphFromInline(xdoc, el, 26, true, center, "Heading1");
 				break;
-			case "h2":
-				createParagraphFromInline(xdoc, el, 22, true, true, "Heading2");
+			}
+			case "h2": {
+				boolean center = !state.mainTitleDone && !hasAnyHeadingBefore(state);
+				if (!state.mainTitleDone && center) state.mainTitleDone = true;
+				createParagraphFromInline(xdoc, el, 22, true, center, "Heading2");
 				break;
-			case "h3":
-				createParagraphFromInline(xdoc, el, 18, true, true, "Heading3");
+			}
+			case "h3": {
+				boolean center = !state.mainTitleDone && !hasAnyHeadingBefore(state);
+				if (!state.mainTitleDone && center) state.mainTitleDone = true;
+				createParagraphFromInline(xdoc, el, 18, true, center, "Heading3");
 				break;
+			}
 			case "h4":
-				createParagraphFromInline(xdoc, el, 16, true, true, "Heading4");
+				createParagraphFromInline(xdoc, el, 16, true, false, "Heading4");
 				break;
 			case "h5":
-				createParagraphFromInline(xdoc, el, 14, true, true, "Heading5");
+				createParagraphFromInline(xdoc, el, 14, true, false, "Heading5");
 				break;
 			case "h6":
-				createParagraphFromInline(xdoc, el, 12, true, true, "Heading6");
+				createParagraphFromInline(xdoc, el, 12, true, false, "Heading6");
 				break;
 			case "p":
 			case "div":
@@ -163,6 +177,11 @@ public class MdToDocxApp {
 			default:
 				createParagraphFromInline(xdoc, el, 12, false, isCentered(el), null);
 		}
+	}
+
+	private static boolean hasAnyHeadingBefore(RenderState state) {
+		// We only need to know if main title has been consumed; this helper remains for clarity
+		return state.mainTitleDone;
 	}
 
 	private static void createParagraphFromInline(XWPFDocument xdoc, Element el, int fontSize, boolean bold, boolean centered, String styleId) {
@@ -334,21 +353,22 @@ public class MdToDocxApp {
 
 	private static void applyRunFontDefaults(XWPFRun run, boolean isHeading) {
 		// Standardize fonts to avoid odd spacing between CJK and Latin chars
-		// ASCII/Western
 		run.setFontFamily("Calibri");
-		// East Asia (CJK)
 		CTRPr rpr = run.getCTR().isSetRPr() ? run.getCTR().getRPr() : run.getCTR().addNewRPr();
 		CTFonts fonts = rpr.addNewRFonts();
 		fonts.setAscii("Calibri");
 		fonts.setHAnsi("Calibri");
 		fonts.setCs("Calibri");
 		fonts.setEastAsia("Microsoft YaHei");
-		// Remove kerning to avoid expanded spacing
 		run.setKerning(0);
 	}
 
 	private static class ListNumberingIds {
 		BigInteger bulletNumId;
 		BigInteger decimalNumId;
+	}
+
+	private static class RenderState {
+		boolean mainTitleDone = false;
 	}
 }
