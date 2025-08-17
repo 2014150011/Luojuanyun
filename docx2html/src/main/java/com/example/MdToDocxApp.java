@@ -3,6 +3,8 @@ package com.example;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.html.HtmlRenderer;
+import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
+import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
@@ -18,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -56,55 +57,174 @@ public class MdToDocxApp {
 		HtmlRenderer renderer = HtmlRenderer.builder().build();
 		String html = renderer.render(mdDocument);
 
-		// Strip tables and images, keep only text content structure
-		List<String> paragraphs = extractTextParagraphs(html);
-
-		try (XWPFDocument doc = new XWPFDocument(); OutputStream os = new FileOutputStream(outputDocxPath.toFile())) {
-			for (String para : paragraphs) {
-				if (para.trim().isEmpty()) continue;
-				XWPFParagraph p = doc.createParagraph();
-				XWPFRun run = p.createRun();
-				writeTextWithLineBreaks(run, para);
-			}
-			doc.write(os);
-		}
-	}
-
-	private static List<String> extractTextParagraphs(String html) {
 		Document doc = Jsoup.parse(html);
 		// Remove tables and images entirely
-		Elements remove = doc.select("table, thead, tbody, tfoot, tr, td, th, img, figure");
-		remove.remove();
+		doc.select("table, thead, tbody, tfoot, tr, td, th, img, figure").remove();
 
-		List<String> paragraphs = new ArrayList<>();
+		try (XWPFDocument xdoc = new XWPFDocument(); OutputStream os = new FileOutputStream(outputDocxPath.toFile())) {
+			for (Element el : doc.body().children()) {
+				appendBlockElementToDoc(xdoc, el);
+			}
+			xdoc.write(os);
+		}
+	}
 
-		// Headings and paragraphs
-		for (Element el : doc.select("h1,h2,h3,h4,h5,h6,p,blockquote,pre,li")) {
-			String text = collectOwnAndDescendantText(el).trim();
-			if (!text.isEmpty()) {
-				paragraphs.add(text);
+	private static void appendBlockElementToDoc(XWPFDocument xdoc, Element el) {
+		String tag = el.tagName().toLowerCase();
+		switch (tag) {
+			case "h1":
+				createParagraphFromInline(xdoc, el, 26, true, isCentered(el));
+				break;
+			case "h2":
+				createParagraphFromInline(xdoc, el, 22, true, isCentered(el));
+				break;
+			case "h3":
+				createParagraphFromInline(xdoc, el, 18, true, isCentered(el));
+				break;
+			case "h4":
+				createParagraphFromInline(xdoc, el, 16, true, isCentered(el));
+				break;
+			case "h5":
+				createParagraphFromInline(xdoc, el, 14, true, isCentered(el));
+				break;
+			case "h6":
+				createParagraphFromInline(xdoc, el, 12, true, isCentered(el));
+				break;
+			case "p":
+			case "div":
+			case "center":
+				createParagraphFromInline(xdoc, el, 12, false, isCentered(el) || tag.equals("center"));
+				break;
+			case "blockquote": {
+				XWPFParagraph p = xdoc.createParagraph();
+				p.setIndentationLeft(720); // 720 twips = 0.5 inch
+				if (isCentered(el)) p.setAlignment(ParagraphAlignment.CENTER);
+				appendInlineContent(p, el, 12, false);
+				break;
+			}
+			case "pre":
+				createCodeBlock(xdoc, el);
+				break;
+			case "ul":
+			case "ol":
+				for (Element li : el.children()) {
+					if (!li.tagName().equalsIgnoreCase("li")) continue;
+					createParagraphFromInline(xdoc, li, 12, false, isCentered(el));
+				}
+				break;
+			case "hr": {
+				XWPFParagraph p = xdoc.createParagraph();
+				XWPFRun r = p.createRun();
+				r.setText("────────");
+				break;
+			}
+			default:
+				// Fallback: treat as paragraph
+				createParagraphFromInline(xdoc, el, 12, false, isCentered(el));
+		}
+	}
+
+	private static void createParagraphFromInline(XWPFDocument xdoc, Element el, int fontSize, boolean bold, boolean centered) {
+		XWPFParagraph p = xdoc.createParagraph();
+		if (centered) p.setAlignment(ParagraphAlignment.CENTER);
+		appendInlineContent(p, el, fontSize, bold);
+	}
+
+	private static void appendInlineContent(XWPFParagraph p, Element el, int baseFontSize, boolean baseBold) {
+		for (org.jsoup.nodes.Node node : el.childNodes()) {
+			if (node instanceof TextNode) {
+				String text = ((TextNode) node).text();
+				appendTextRun(p, text, baseFontSize, baseBold, false, false);
+			} else if (node instanceof Element) {
+				Element child = (Element) node;
+				String tag = child.tagName().toLowerCase();
+				switch (tag) {
+					case "strong":
+					case "b":
+						appendInlineContentWithOverrides(p, child, baseFontSize, true, false, false);
+						break;
+					case "em":
+					case "i":
+						appendInlineContentWithOverrides(p, child, baseFontSize, baseBold, true, false);
+						break;
+					case "u":
+						appendInlineContentWithOverrides(p, child, baseFontSize, baseBold, false, true);
+						break;
+					case "code": {
+						String codeText = child.text();
+						XWPFRun r = p.createRun();
+						r.setText(codeText);
+						r.setFontFamily("Courier New");
+						r.setFontSize(baseFontSize);
+						break;
+					}
+					case "br": {
+						XWPFRun r = p.createRun();
+						r.addBreak();
+						break;
+					}
+					case "span":
+					case "small":
+						appendInlineContent(p, child, baseFontSize, baseBold);
+						break;
+					default:
+						appendInlineContent(p, child, baseFontSize, baseBold);
+				}
 			}
 		}
-
-		// Fallback: capture stray text nodes under body not wrapped by blocks
-		for (TextNode tn : doc.body().textNodes()) {
-			String text = tn.text().trim();
-			if (!text.isEmpty()) paragraphs.add(text);
-		}
-
-		return paragraphs;
 	}
 
-	private static String collectOwnAndDescendantText(Element el) {
-		// Jsoup's text() collapses whitespace; acceptable for plain-text output
-		return el.text();
+	private static void appendInlineContentWithOverrides(XWPFParagraph p, Element el, int fontSize, boolean bold, boolean italic, boolean underline) {
+		for (org.jsoup.nodes.Node node : el.childNodes()) {
+			if (node instanceof TextNode) {
+				appendTextRun(p, ((TextNode) node).text(), fontSize, bold, italic, underline);
+			} else if (node instanceof Element) {
+				appendInlineContentWithOverrides(p, (Element) node, fontSize, bold, italic, underline);
+			}
+		}
 	}
 
-	private static void writeTextWithLineBreaks(XWPFRun run, String text) {
-		String[] lines = text.split("\r?\n");
-		for (int i = 0; i < lines.length; i++) {
-			if (i > 0) run.addBreak();
-			run.setText(lines[i]);
+	private static void appendTextRun(XWPFParagraph p, String text, int fontSize, boolean bold, boolean italic, boolean underline) {
+		if (text == null || text.isEmpty()) return;
+		String[] parts = text.split("\r?\n", -1);
+		for (int i = 0; i < parts.length; i++) {
+			XWPFRun r = p.createRun();
+			r.setText(parts[i]);
+			r.setFontSize(fontSize);
+			r.setBold(bold);
+			r.setItalic(italic);
+			if (underline) r.setUnderline(UnderlinePatterns.SINGLE);
+			if (i < parts.length - 1) r.addBreak();
 		}
+	}
+
+	private static void createCodeBlock(XWPFDocument xdoc, Element pre) {
+		XWPFParagraph p = xdoc.createParagraph();
+		for (org.jsoup.nodes.Node node : pre.childNodes()) {
+			if (node instanceof TextNode) {
+				String text = ((TextNode) node).text();
+				XWPFRun r = p.createRun();
+				r.setFontFamily("Courier New");
+				r.setText(text);
+				r.addBreak();
+			} else if (node instanceof Element) {
+				Element child = (Element) node;
+				if (child.tagName().equalsIgnoreCase("code")) {
+					XWPFRun r = p.createRun();
+					r.setFontFamily("Courier New");
+					r.setText(child.text());
+					r.addBreak();
+				}
+			}
+		}
+	}
+
+	private static boolean isCentered(Element el) {
+		String align = el.hasAttr("align") ? el.attr("align").toLowerCase() : "";
+		if ("center".equals(align)) return true;
+		String style = el.hasAttr("style") ? el.attr("style").toLowerCase() : "";
+		if (style.contains("text-align:center") || style.contains("text-align: center")) return true;
+		String classAttr = el.className().toLowerCase();
+		return classAttr.contains("text-center") || classAttr.contains("center");
 	}
 }
