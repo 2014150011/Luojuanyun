@@ -76,7 +76,7 @@ public class MdToDocxApp {
 			List<Element> children = new ArrayList<>(doc.body().children());
 			for (int i = 0; i < children.size(); i++) {
 				Element el = children.get(i);
-				if (isSmallHeading(el) && i + 1 < children.size() && isParagraphish(children.get(i + 1))) {
+				if ((isSmallHeading(el) || isShortHeading(el)) && i + 1 < children.size() && isParagraphish(children.get(i + 1))) {
 					appendInlineHeadingWithParagraph(xdoc, el, children.get(i + 1));
 					state.seenAnyHeading = true;
 					i++; // skip next since merged
@@ -93,6 +93,13 @@ public class MdToDocxApp {
 		return tag.equals("h5") || tag.equals("h6") || tag.equals("h4");
 	}
 
+	private static boolean isShortHeading(Element el) {
+		String tag = el.tagName().toLowerCase();
+		if (!(tag.equals("h2") || tag.equals("h3"))) return false;
+		String text = el.text() == null ? "" : el.text().trim();
+		return text.length() > 0 && text.length() <= 10; // short subtitle merge threshold
+	}
+
 	private static boolean isParagraphish(Element el) {
 		String tag = el.tagName().toLowerCase();
 		return tag.equals("p") || tag.equals("div") || tag.equals("center");
@@ -101,14 +108,25 @@ public class MdToDocxApp {
 	private static void appendInlineHeadingWithParagraph(XWPFDocument xdoc, Element heading, Element paragraphEl) {
 		XWPFParagraph p = xdoc.createParagraph();
 		p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
+		p.setSpacingBefore(0);
+		p.setSpacingAfter(0);
 		// heading part (bold, slightly larger)
-		int hSize = heading.tagName().equalsIgnoreCase("h4") ? 16 : heading.tagName().equalsIgnoreCase("h5") ? 14 : 12;
+		int hSize = headingFontSize(heading.tagName());
 		appendInlineContentWithOverrides(p, heading, hSize, true, false, false);
 		XWPFRun sep = p.createRun();
 		sep.setText(" ");
 		applyRunFontDefaults(sep, true);
 		// content part
 		appendInlineContent(p, paragraphEl, 12, false);
+	}
+
+	private static int headingFontSize(String tagName) {
+		String t = tagName.toLowerCase();
+		if (t.equals("h2")) return 22;
+		if (t.equals("h3")) return 18;
+		if (t.equals("h4")) return 16;
+		if (t.equals("h5")) return 14;
+		return 12;
 	}
 
 	private static boolean isHeadingTag(String tag) {
@@ -159,6 +177,8 @@ public class MdToDocxApp {
 			case "blockquote": {
 				XWPFParagraph p = xdoc.createParagraph();
 				p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
+				p.setSpacingBefore(0);
+				p.setSpacingAfter(0);
 				p.setIndentationLeft(720);
 				if (isCentered(el)) p.setAlignment(ParagraphAlignment.CENTER);
 				appendInlineContent(p, el, 12, false);
@@ -176,6 +196,8 @@ public class MdToDocxApp {
 			case "hr": {
 				XWPFParagraph p = xdoc.createParagraph();
 				p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
+				p.setSpacingBefore(0);
+				p.setSpacingAfter(0);
 				XWPFRun r = p.createRun();
 				r.setText("────────");
 				applyRunFontDefaults(r, false);
@@ -189,6 +211,8 @@ public class MdToDocxApp {
 	private static void createParagraphFromInline(XWPFDocument xdoc, Element el, int fontSize, boolean bold, boolean centered, String styleId) {
 		XWPFParagraph p = xdoc.createParagraph();
 		p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
+		p.setSpacingBefore(0);
+		p.setSpacingAfter(0);
 		if (centered) p.setAlignment(ParagraphAlignment.CENTER);
 		if (styleId != null) p.setStyle(styleId);
 		appendInlineContent(p, el, fontSize, bold);
@@ -268,6 +292,8 @@ public class MdToDocxApp {
 	private static void createCodeBlock(XWPFDocument xdoc, Element pre) {
 		XWPFParagraph p = xdoc.createParagraph();
 		p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
+		p.setSpacingBefore(0);
+		p.setSpacingAfter(0);
 		for (org.jsoup.nodes.Node node : pre.childNodes()) {
 			if (node instanceof TextNode) {
 				String text = ((TextNode) node).text();
