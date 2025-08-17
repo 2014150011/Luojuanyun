@@ -9,6 +9,7 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
+import org.apache.poi.xwpf.usermodel.LineSpacingRule;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STNumberFormat;
@@ -26,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Objects;
 
 public class MdToDocxApp {
@@ -68,11 +70,41 @@ public class MdToDocxApp {
 
 		try (XWPFDocument xdoc = new XWPFDocument(); OutputStream os = new FileOutputStream(outputDocxPath.toFile())) {
 			ListNumberingIds listIds = ensureListNumberings(xdoc);
-			for (Element el : doc.body().children()) {
-				appendBlockElementToDoc(xdoc, el, listIds, 0);
+			List<Element> children = new ArrayList<>(doc.body().children());
+			for (int i = 0; i < children.size(); i++) {
+				Element el = children.get(i);
+				if (isSmallHeading(el) && i + 1 < children.size() && isParagraphish(children.get(i + 1))) {
+					appendInlineHeadingWithParagraph(xdoc, el, children.get(i + 1));
+					i++; // skip next since merged
+				} else {
+					appendBlockElementToDoc(xdoc, el, listIds, 0);
+				}
 			}
 			xdoc.write(os);
 		}
+	}
+
+	private static boolean isSmallHeading(Element el) {
+		String tag = el.tagName().toLowerCase();
+		return tag.equals("h5") || tag.equals("h6") || tag.equals("h4");
+	}
+
+	private static boolean isParagraphish(Element el) {
+		String tag = el.tagName().toLowerCase();
+		return tag.equals("p") || tag.equals("div") || tag.equals("center");
+	}
+
+	private static void appendInlineHeadingWithParagraph(XWPFDocument xdoc, Element heading, Element paragraphEl) {
+		XWPFParagraph p = xdoc.createParagraph();
+		p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
+		// heading part (bold, slightly larger)
+		int hSize = heading.tagName().equalsIgnoreCase("h4") ? 16 : heading.tagName().equalsIgnoreCase("h5") ? 14 : 12;
+		appendInlineContentWithOverrides(p, heading, hSize, true, false, false);
+		XWPFRun sep = p.createRun();
+		sep.setText(" ");
+		sep.setKerning(0);
+		// content part
+		appendInlineContent(p, paragraphEl, 12, false);
 	}
 
 	private static void appendBlockElementToDoc(XWPFDocument xdoc, Element el, ListNumberingIds listIds, int listLevel) {
@@ -103,6 +135,7 @@ public class MdToDocxApp {
 				break;
 			case "blockquote": {
 				XWPFParagraph p = xdoc.createParagraph();
+				p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 				p.setIndentationLeft(720);
 				if (isCentered(el)) p.setAlignment(ParagraphAlignment.CENTER);
 				appendInlineContent(p, el, 12, false);
@@ -119,8 +152,10 @@ public class MdToDocxApp {
 				break;
 			case "hr": {
 				XWPFParagraph p = xdoc.createParagraph();
+				p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 				XWPFRun r = p.createRun();
 				r.setText("────────");
+				r.setKerning(0);
 				break;
 			}
 			default:
@@ -130,6 +165,7 @@ public class MdToDocxApp {
 
 	private static void createParagraphFromInline(XWPFDocument xdoc, Element el, int fontSize, boolean bold, boolean centered, String styleId) {
 		XWPFParagraph p = xdoc.createParagraph();
+		p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 		if (centered) p.setAlignment(ParagraphAlignment.CENTER);
 		if (styleId != null) p.setStyle(styleId);
 		appendInlineContent(p, el, fontSize, bold);
@@ -161,11 +197,13 @@ public class MdToDocxApp {
 						r.setText(codeText);
 						r.setFontFamily("Courier New");
 						r.setFontSize(baseFontSize);
+						r.setKerning(0);
 						break;
 					}
 					case "br": {
 						XWPFRun r = p.createRun();
 						r.addBreak();
+						r.setKerning(0);
 						break;
 					}
 					case "span":
@@ -199,12 +237,14 @@ public class MdToDocxApp {
 			r.setBold(bold);
 			r.setItalic(italic);
 			if (underline) r.setUnderline(UnderlinePatterns.SINGLE);
+			r.setKerning(0);
 			if (i < parts.length - 1) r.addBreak();
 		}
 	}
 
 	private static void createCodeBlock(XWPFDocument xdoc, Element pre) {
 		XWPFParagraph p = xdoc.createParagraph();
+		p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 		for (org.jsoup.nodes.Node node : pre.childNodes()) {
 			if (node instanceof TextNode) {
 				String text = ((TextNode) node).text();
@@ -212,6 +252,7 @@ public class MdToDocxApp {
 				r.setFontFamily("Courier New");
 				r.setText(text);
 				r.addBreak();
+				r.setKerning(0);
 			} else if (node instanceof Element) {
 				Element child = (Element) node;
 				if (child.tagName().equalsIgnoreCase("code")) {
@@ -219,6 +260,7 @@ public class MdToDocxApp {
 					r.setFontFamily("Courier New");
 					r.setText(child.text());
 					r.addBreak();
+					r.setKerning(0);
 				}
 			}
 		}
@@ -237,14 +279,13 @@ public class MdToDocxApp {
 		BigInteger numId = ordered ? ids.decimalNumId : ids.bulletNumId;
 		for (Element li : listEl.children()) {
 			if (!li.tagName().equalsIgnoreCase("li")) continue;
-			// Paragraph for this list item (exclude nested lists content for the text line)
 			Element liLine = li.clone();
 			liLine.select("ul,ol").remove();
 			XWPFParagraph p = xdoc.createParagraph();
+			p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 			p.setNumID(numId);
 			p.setNumILvl(BigInteger.valueOf(level));
 			appendInlineContent(p, liLine, 12, false);
-			// Nested lists
 			for (Element nested : li.children()) {
 				String t = nested.tagName().toLowerCase();
 				if (t.equals("ul")) {
@@ -259,7 +300,6 @@ public class MdToDocxApp {
 	private static ListNumberingIds ensureListNumberings(XWPFDocument xdoc) {
 		XWPFNumbering numbering = xdoc.createNumbering();
 
-		// Bullet abstract numbering
 		CTAbstractNum bulletAbstract = CTAbstractNum.Factory.newInstance();
 		bulletAbstract.addNewLvl();
 		CTLvl bulletLvl = bulletAbstract.getLvlArray(0);
@@ -267,13 +307,11 @@ public class MdToDocxApp {
 		bulletLvl.addNewNumFmt().setVal(STNumberFormat.BULLET);
 		bulletLvl.addNewLvlText().setVal("•");
 		bulletLvl.addNewStart().setVal(BigInteger.ONE);
-		// add some indentation for bullets
 		bulletLvl.addNewPPr().addNewInd().setLeft(BigInteger.valueOf(720));
 
 		BigInteger bulletAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(bulletAbstract));
 		BigInteger bulletNumId = numbering.addNum(bulletAbsId);
 
-		// Decimal abstract numbering
 		CTAbstractNum decAbstract = CTAbstractNum.Factory.newInstance();
 		decAbstract.addNewLvl();
 		CTLvl decLvl = decAbstract.getLvlArray(0);
