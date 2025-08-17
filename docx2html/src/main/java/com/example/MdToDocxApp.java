@@ -112,12 +112,12 @@ public class MdToDocxApp {
 		p.setSpacingAfter(0);
 		// heading part (bold, slightly larger)
 		int hSize = headingFontSize(heading.tagName());
-		appendInlineContentWithOverrides(p, heading, hSize, true, false, false);
+		appendInlineContentWithOverrides(p, heading, hSize, true, false, false, false);
 		XWPFRun sep = p.createRun();
 		sep.setText(" ");
 		applyRunFontDefaults(sep, true);
 		// content part
-		appendInlineContent(p, paragraphEl, 12, false);
+		appendInlineContent(p, paragraphEl, 12, false, false);
 	}
 
 	private static int headingFontSize(String tagName) {
@@ -181,7 +181,7 @@ public class MdToDocxApp {
 				p.setSpacingAfter(0);
 				p.setIndentationLeft(720);
 				if (isCentered(el)) p.setAlignment(ParagraphAlignment.CENTER);
-				appendInlineContent(p, el, 12, false);
+				appendInlineContent(p, el, 12, false, false);
 				break;
 			}
 			case "pre":
@@ -215,13 +215,14 @@ public class MdToDocxApp {
 		p.setSpacingAfter(0);
 		if (centered) p.setAlignment(ParagraphAlignment.CENTER);
 		if (styleId != null) p.setStyle(styleId);
-		appendInlineContent(p, el, fontSize, bold);
+		appendInlineContent(p, el, fontSize, bold, false);
 	}
 
-	private static void appendInlineContent(XWPFParagraph p, Element el, int baseFontSize, boolean baseBold) {
+	private static void appendInlineContent(XWPFParagraph p, Element el, int baseFontSize, boolean baseBold, boolean sanitizeListSpaces) {
 		for (org.jsoup.nodes.Node node : el.childNodes()) {
 			if (node instanceof TextNode) {
 				String text = ((TextNode) node).text();
+				if (sanitizeListSpaces) text = sanitizeListText(text);
 				appendTextRun(p, text, baseFontSize, baseBold, false, false);
 			} else if (node instanceof Element) {
 				Element child = (Element) node;
@@ -229,17 +230,18 @@ public class MdToDocxApp {
 				switch (tag) {
 					case "strong":
 					case "b":
-						appendInlineContentWithOverrides(p, child, baseFontSize, true, false, false);
+						appendInlineContentWithOverrides(p, child, baseFontSize, true, false, false, sanitizeListSpaces);
 						break;
 					case "em":
 					case "i":
-						appendInlineContentWithOverrides(p, child, baseFontSize, baseBold, true, false);
+						appendInlineContentWithOverrides(p, child, baseFontSize, baseBold, true, false, sanitizeListSpaces);
 						break;
 					case "u":
-						appendInlineContentWithOverrides(p, child, baseFontSize, baseBold, false, true);
+						appendInlineContentWithOverrides(p, child, baseFontSize, baseBold, false, true, sanitizeListSpaces);
 						break;
 					case "code": {
 						String codeText = child.text();
+						if (sanitizeListSpaces) codeText = sanitizeListText(codeText);
 						XWPFRun r = p.createRun();
 						r.setText(codeText);
 						r.setFontFamily("Consolas");
@@ -255,23 +257,39 @@ public class MdToDocxApp {
 					}
 					case "span":
 					case "small":
-						appendInlineContent(p, child, baseFontSize, baseBold);
+						appendInlineContent(p, child, baseFontSize, baseBold, sanitizeListSpaces);
 						break;
 					default:
-						appendInlineContent(p, child, baseFontSize, baseBold);
+						appendInlineContent(p, child, baseFontSize, baseBold, sanitizeListSpaces);
 				}
 			}
 		}
 	}
 
-	private static void appendInlineContentWithOverrides(XWPFParagraph p, Element el, int fontSize, boolean bold, boolean italic, boolean underline) {
+	private static void appendInlineContentWithOverrides(XWPFParagraph p, Element el, int fontSize, boolean bold, boolean italic, boolean underline, boolean sanitizeListSpaces) {
 		for (org.jsoup.nodes.Node node : el.childNodes()) {
 			if (node instanceof TextNode) {
-				appendTextRun(p, ((TextNode) node).text(), fontSize, bold, italic, underline);
+				String t = ((TextNode) node).text();
+				if (sanitizeListSpaces) t = sanitizeListText(t);
+				appendTextRun(p, t, fontSize, bold, italic, underline);
 			} else if (node instanceof Element) {
-				appendInlineContentWithOverrides(p, (Element) node, fontSize, bold, italic, underline);
+				appendInlineContentWithOverrides(p, (Element) node, fontSize, bold, italic, underline, sanitizeListSpaces);
 			}
 		}
+	}
+
+	private static String sanitizeListText(String text) {
+		if (text == null || text.isEmpty()) return text;
+		String collapsed = text.replaceAll("\\s+", " ");
+		// If looks like spaced tokens of single letters/digits/Han chars, remove spaces entirely
+		if (collapsed.trim().matches("^(?:[A-Za-z0-9\\p{IsHan}])(\\s+[A-Za-z0-9\\p{IsHan}]){1,}$")) {
+			return collapsed.replace(" ", "");
+		}
+		// If contains Han, typically no spaces needed
+		if (collapsed.matches(".*\\p{IsHan}.*")) {
+			return collapsed.replace(" ", "");
+		}
+		return collapsed;
 	}
 
 	private static void appendTextRun(XWPFParagraph p, String text, int fontSize, boolean bold, boolean italic, boolean underline) {
@@ -342,7 +360,7 @@ public class MdToDocxApp {
 			p.setIndentationRight(720);
 			p.setNumID(numId);
 			p.setNumILvl(BigInteger.valueOf(level));
-			appendInlineContent(p, liLine, 12, false);
+			appendInlineContent(p, liLine, 12, false, true);
 			for (Element nested : li.children()) {
 				String t = nested.tagName().toLowerCase();
 				if (t.equals("ul")) {
@@ -371,7 +389,7 @@ public class MdToDocxApp {
 		BigInteger outBulAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(outBulAbs));
 		BigInteger outBulNumId = numbering.addNum(outBulAbsId);
 
-		// Outside ordered: level 0 numeric, nested levels use bullet to avoid inner '1、'
+		// Outside ordered: level 0 numeric with Chinese comma, nested levels use bullet
 		CTAbstractNum outDecAbs = CTAbstractNum.Factory.newInstance();
 		for (int lvl = 0; lvl < 3; lvl++) {
 			outDecAbs.addNewLvl();
@@ -379,7 +397,7 @@ public class MdToDocxApp {
 			l.setIlvl(BigInteger.valueOf(lvl));
 			if (lvl == 0) {
 				l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
-				l.addNewLvlText().setVal("%1.");
+				l.addNewLvlText().setVal("%1、");
 			} else {
 				l.addNewNumFmt().setVal(STNumberFormat.BULLET);
 				l.addNewLvlText().setVal("·");
@@ -404,7 +422,7 @@ public class MdToDocxApp {
 		BigInteger inBulAbsId = numbering.addAbstractNum(new org.apache.poi.xwpf.usermodel.XWPFAbstractNum(inBulAbs));
 		BigInteger inBulNumId = numbering.addNum(inBulAbsId);
 
-		// Inside ordered: level 0 numeric, nested levels use bullet to avoid inner '1、'
+		// Inside ordered: level 0 numeric with Chinese comma, nested levels use bullet
 		CTAbstractNum inDecAbs = CTAbstractNum.Factory.newInstance();
 		for (int lvl = 0; lvl < 3; lvl++) {
 			inDecAbs.addNewLvl();
@@ -412,7 +430,7 @@ public class MdToDocxApp {
 			l.setIlvl(BigInteger.valueOf(lvl));
 			if (lvl == 0) {
 				l.addNewNumFmt().setVal(STNumberFormat.DECIMAL);
-				l.addNewLvlText().setVal("%1.");
+				l.addNewLvlText().setVal("%1、");
 			} else {
 				l.addNewNumFmt().setVal(STNumberFormat.BULLET);
 				l.addNewLvlText().setVal("·");
