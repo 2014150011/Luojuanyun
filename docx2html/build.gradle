@@ -19,6 +19,9 @@ sourceCompatibility = JavaVersion.VERSION_11
      implementation 'com.vladsch.flexmark:flexmark:0.64.8'
      implementation 'com.vladsch.flexmark:flexmark-html2md-converter:0.64.8'
      implementation 'com.vladsch.flexmark:flexmark-ext-tables:0.64.8'
+     // flexmark core already includes parser; remove invalid module for this version
+     // implementation 'com.vladsch.flexmark:flexmark-parser:0.64.8'
+     implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
  }
  
  // Ensure UTF-8 source encoding
