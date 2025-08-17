@@ -311,6 +311,9 @@ public class MdToDocxApp {
 			liLine.select("ul,ol").remove();
 			XWPFParagraph p = xdoc.createParagraph();
 			p.setSpacingBetween(1.0, LineSpacingRule.AUTO);
+			p.setSpacingBefore(0);
+			p.setSpacingAfter(0);
+			p.setIndentationRight(720);
 			p.setNumID(numId);
 			p.setNumILvl(BigInteger.valueOf(level));
 			appendInlineContent(p, liLine, 12, false);
