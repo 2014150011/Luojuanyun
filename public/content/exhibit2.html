@@ -10,12 +10,14 @@
       body{background: radial-gradient(700px 500px at 10% -10%, #eff6ff, transparent 55%), linear-gradient(180deg, #f8fafc, #eef2f7); color:var(--text)}
       .container{max-width:1000px;margin:0 auto;padding:32px 16px}
       .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin-bottom:16px}
+      .card.alt{background:#f8fafc}
       h1{margin:0 0 8px}
       h2{margin:0 0 12px;font-size:18px}
       p{color:var(--muted)}
       table{width:100%;border-collapse:collapse}
       th,td{border:1px solid #e2e8f0;padding:10px;text-align:left}
       th{background:#f1f5f9}
+      ul{margin:0;padding-left:18px}
     </style>
   </head>
   <body>
@@ -25,8 +27,14 @@
         <p>基于近 90 天数据，对目标市场的规模、竞争格局与价格带进行概要分析。</p>
         <img src="../images/cover2.svg" alt="市场洞察封面" style="width:100%;border-radius:12px;border:1px solid #e2e8f0" />
       </div>
+
       <div class="card">
-        <h2>品类价格带分布</h2>
+        <h2>一、市场规模</h2>
+        <p>目标品类市场规模保持稳定增长，线上渗透率提升，用户购买频次上行。</p>
+      </div>
+
+      <div class="card alt">
+        <h2>二、价格带分布</h2>
         <table>
           <thead><tr><th>价格带</th><th>销量占比</th><th>主流品牌</th></tr></thead>
           <tbody>
@@ -36,9 +44,57 @@
           </tbody>
         </table>
       </div>
+
       <div class="card">
-        <h2>图像示例</h2>
+        <h2>三、渠道结构</h2>
+        <table>
+          <thead><tr><th>渠道</th><th>份额</th><th>增速</th></tr></thead>
+          <tbody>
+            <tr><td>搜索</td><td>36%</td><td>+12%</td></tr>
+            <tr><td>社交</td><td>34%</td><td>+18%</td></tr>
+            <tr><td>内容</td><td>30%</td><td>+9%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card alt">
+        <h2>四、图片示例</h2>
         <img src="../images/figure2.svg" alt="价格带示意图" style="width:100%;border-radius:12px;border:1px solid #e2e8f0" />
+      </div>
+
+      <div class="card">
+        <h2>五、用户偏好</h2>
+        <ul>
+          <li>偏好高性价比与套装组合</li>
+          <li>关注物流时效与售后保障</li>
+          <li>促销期价格敏感度提升</li>
+        </ul>
+      </div>
+
+      <div class="card alt">
+        <h2>六、区域分布</h2>
+        <p>一线与新一线贡献 62%，下沉市场保持稳步增长。</p>
+      </div>
+
+      <div class="card">
+        <h2>七、竞品对比</h2>
+        <table>
+          <thead><tr><th>品牌</th><th>优势</th><th>不足</th></tr></thead>
+          <tbody>
+            <tr><td>A</td><td>渠道覆盖广</td><td>客单较高</td></tr>
+            <tr><td>B</td><td>内容运营强</td><td>供应链波动</td></tr>
+            <tr><td>C</td><td>售后满意度高</td><td>新客获取成本高</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card alt">
+        <h2>八、建议</h2>
+        <ul>
+          <li>巩固中高价格带的差异化优势</li>
+          <li>加大内容与口碑建设</li>
+          <li>优化供应与库存周转</li>
+        </ul>
       </div>
     </div>
   </body>

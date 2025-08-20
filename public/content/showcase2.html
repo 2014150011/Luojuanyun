@@ -10,6 +10,7 @@
       body{background: radial-gradient(600px 420px at 15% 0%, #eef2ff, transparent 55%), linear-gradient(180deg, #f8fafc, #eef2f7); color:var(--text)}
       .container{max-width:960px;margin:0 auto;padding:28px 14px}
       .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin-bottom:16px}
+      .card.alt{background:#f8fafc}
       h1{margin:0 0 10px}
       h2{margin:0 0 12px;font-size:18px}
       ul{margin:0;padding-left:18px}
@@ -26,8 +27,14 @@
         <h1>项目里程碑汇报</h1>
         <img src="../images/cover3.svg" alt="项目封面" />
       </div>
+
       <div class="card">
-        <h2>关键里程碑</h2>
+        <h2>一、范围与目标</h2>
+        <p>明确项目目标、范围与关键成功指标（KSI）。</p>
+      </div>
+
+      <div class="card alt">
+        <h2>二、关键里程碑</h2>
         <ul>
           <li>M1：需求分析与范围确认（完成）</li>
           <li>M2：架构设计与评审（完成）</li>
@@ -35,8 +42,9 @@
           <li>M4：联调与压测（计划）</li>
         </ul>
       </div>
+
       <div class="card">
-        <h2>风险与缓解措施</h2>
+        <h2>三、风险与缓解措施</h2>
         <table>
           <thead><tr><th>风险</th><th>影响</th><th>缓解措施</th></tr></thead>
           <tbody>
@@ -45,6 +53,38 @@
             <tr><td>上线窗口受限</td><td>延迟发布</td><td>准备灰度与回滚剧本</td></tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="card alt">
+        <h2>四、资源与排期</h2>
+        <table>
+          <thead><tr><th>角色</th><th>人数</th><th>关键职责</th></tr></thead>
+          <tbody>
+            <tr><td>前端</td><td>3</td><td>界面与交互实现</td></tr>
+            <tr><td>后端</td><td>3</td><td>接口与数据服务</td></tr>
+            <tr><td>测试</td><td>2</td><td>质量保障</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>五、阶段交付</h2>
+        <p>每两周一次迭代，交付可运行的增量功能。</p>
+      </div>
+
+      <div class="card alt">
+        <h2>六、可视化图示</h2>
+        <img src="../images/figure3.svg" alt="进度示意图" />
+      </div>
+
+      <div class="card">
+        <h2>七、质量保障</h2>
+        <p>覆盖单元、集成与端到端测试，关键路径必测。</p>
+      </div>
+
+      <div class="card alt">
+        <h2>八、结论与行动</h2>
+        <p>维持当前节奏推进，优先解决影响上线窗口的风险点。</p>
       </div>
     </div>
   </body>

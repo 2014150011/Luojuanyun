@@ -62,12 +62,13 @@ button { border: none; border-radius: 10px; padding: 10px 14px; cursor: pointer;
 .msg-bubble { background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; max-width: 72%; }
 .msg-role-user .msg-avatar { color: #22d3ee; }
 .msg-role-assistant .msg-avatar { color: #a5b4fc; }
-.msg-role-assistant { justify-content: flex-end; flex-direction: row-reverse; text-align: right; }
+.msg-role-user { justify-content: flex-end; flex-direction: row-reverse; text-align: right; }
+.msg-role-assistant { justify-content: flex-start; flex-direction: row; text-align: left; }
 .msg-role-user .msg-bubble { background: rgba(34, 211, 238, 0.08); border-color: #2563eb44; }
 .msg-role-assistant .msg-bubble { background: rgba(99, 102, 241, 0.08); border-color: #4f46e544; }
 .msg-content { white-space: pre-wrap; line-height: 1.6; }
-.message .msg-bubble { line-height: 1.8; }
-.chat-window { row-gap: 16px; }
+.message .msg-bubble { line-height: 1.9; }
+.chat-window { gap: 32px; }
 .msg-chart { margin-top: 8px; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 8px; border: 1px dashed #2b3a5a; width: 100%; max-width: 560px; }
 .msg-chart canvas { width: 100% !important; height: 240px !important; display: block; }
 
