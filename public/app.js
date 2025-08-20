@@ -36,7 +36,10 @@ tabButtons.forEach((btn) => {
 });
 
 window.addEventListener('hashchange', handleHashChange);
-// Initialize on load
+// Initialize on load; if no hash, set default
+if (!location.hash) {
+  location.replace('#loader1');
+}
 handleHashChange();
 
 // Overlay logic for loader1 and loader2
