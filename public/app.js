@@ -56,33 +56,39 @@ const btnExit = document.getElementById('btn-exit-fullscreen');
 const appHeader = document.querySelector('.app-header');
 
 function updateOverlayOffset() {
-  const headerHeight = appHeader?.offsetHeight || 0;
-  overlay.style.setProperty('--overlay-top', `${headerHeight}px`);
+  const headerHeight = appHeader ? appHeader.offsetHeight : 0;
+  if (overlay && overlay.style && typeof overlay.style.setProperty === 'function') {
+    overlay.style.setProperty('--overlay-top', `${headerHeight}px`);
+  }
 }
 
 function openOverlay(url) {
+  if (!overlay || !overlayIframe) return;
   overlayIframe.src = url;
   updateOverlayOffset();
   overlay.classList.remove('hidden');
 }
 
 function closeOverlay() {
+  if (!overlay || !overlayIframe) return;
   overlay.classList.add('hidden');
   overlayIframe.src = 'about:blank';
 }
 
-btnExit.addEventListener('click', closeOverlay);
+if (btnExit) btnExit.addEventListener('click', closeOverlay);
 
 // Close overlay when clicking on the dim background (not toolbar/iframe)
-overlay.addEventListener('click', (e) => {
-  if (e.target === overlay) {
-    closeOverlay();
-  }
-});
+if (overlay) {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      closeOverlay();
+    }
+  });
+}
 
 // Close with Esc
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+  if (e.key === 'Escape' && overlay && !overlay.classList.contains('hidden')) {
     closeOverlay();
   }
 });
@@ -100,20 +106,28 @@ if (tabsNav) {
 
 // Recalculate overlay offset on resize while open
 window.addEventListener('resize', () => {
-  if (!overlay.classList.contains('hidden')) {
+  if (overlay && !overlay.classList.contains('hidden')) {
     updateOverlayOffset();
   }
 });
 
-document.getElementById('btn-open-loader1').addEventListener('click', () => {
-  const url = document.getElementById('select-loader1').value;
-  openOverlay(url);
-});
+const btnOpen1 = document.getElementById('btn-open-loader1');
+if (btnOpen1) {
+  btnOpen1.addEventListener('click', () => {
+    const sel = document.getElementById('select-loader1');
+    const url = sel ? sel.value : '';
+    if (url) openOverlay(url);
+  });
+}
 
-document.getElementById('btn-open-loader2').addEventListener('click', () => {
-  const url = document.getElementById('select-loader2').value;
-  openOverlay(url);
-});
+const btnOpen2 = document.getElementById('btn-open-loader2');
+if (btnOpen2) {
+  btnOpen2.addEventListener('click', () => {
+    const sel = document.getElementById('select-loader2');
+    const url = sel ? sel.value : '';
+    if (url) openOverlay(url);
+  });
+}
 
 // Chat feature: mock Q&A with possible chart rendering
 const chatWindow = document.getElementById('chat-window');
@@ -199,17 +213,19 @@ function renderChartInMessage(canvas, spec) {
   }
 }
 
-chatForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const value = chatInput.value.trim();
-  if (!value) return;
-  appendMessage('user', value);
-  chatInput.value = '';
+if (chatForm && chatInput) {
+  chatForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const value = chatInput.value.trim();
+    if (!value) return;
+    appendMessage('user', value);
+    chatInput.value = '';
 
-  // Simulate async response
-  setTimeout(() => {
-    const answer = generateAnswer(value);
-    appendMessage('assistant', answer.text, answer.chartSpec);
-  }, 400);
-});
+    // Simulate async response
+    setTimeout(() => {
+      const answer = generateAnswer(value);
+      appendMessage('assistant', answer.text, answer.chartSpec);
+    }, 400);
+  });
+}
 
