@@ -62,17 +62,50 @@ function updateOverlayOffset() {
   }
 }
 
+function isFullscreenActive() {
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+}
+
+function requestFullscreen(el) {
+  if (!el) return;
+  try {
+    if (el.requestFullscreen) return el.requestFullscreen();
+    if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
+    if (el.mozRequestFullScreen) return el.mozRequestFullScreen();
+    if (el.msRequestFullscreen) return el.msRequestFullscreen();
+  } catch (_) {
+    // ignore
+  }
+}
+
+function exitFullscreen() {
+  try {
+    if (document.exitFullscreen) return document.exitFullscreen();
+    if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+    if (document.mozCancelFullScreen) return document.mozCancelFullScreen();
+    if (document.msExitFullscreen) return document.msExitFullscreen();
+  } catch (_) {
+    // ignore
+  }
+}
+
 function openOverlay(url) {
   if (!overlay || !overlayIframe) return;
   overlayIframe.src = url;
   updateOverlayOffset();
   overlay.classList.remove('hidden');
+  // Try to enter real fullscreen for better UX
+  requestFullscreen(overlay);
 }
 
 function closeOverlay() {
   if (!overlay || !overlayIframe) return;
   overlay.classList.add('hidden');
   overlayIframe.src = 'about:blank';
+  // Exit real fullscreen if active
+  if (isFullscreenActive()) {
+    exitFullscreen();
+  }
 }
 
 if (btnExit) btnExit.addEventListener('click', closeOverlay);
