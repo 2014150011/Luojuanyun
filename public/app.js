@@ -1,4 +1,4 @@
-// Tab switching
+// Tab switching with hash routing
 const tabButtons = Array.from(document.querySelectorAll('.tab'));
 const panels = {
   loader1: document.getElementById('panel-loader1'),
@@ -6,16 +6,43 @@ const panels = {
   loader2: document.getElementById('panel-loader2')
 };
 
+const tabKeyToButton = new Map(tabButtons.map((btn) => [btn.dataset.tab, btn]));
+
+function switchTab(tabKey) {
+  const key = panels[tabKey] ? tabKey : 'loader1';
+  // buttons state
+  tabButtons.forEach((b) => {
+    const isActive = b.dataset.tab === key;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-selected', String(isActive));
+  });
+  // panels state
+  Object.entries(panels).forEach(([k, panel]) => {
+    panel.classList.toggle('hidden', k !== key);
+  });
+}
+
+function handleHashChange() {
+  const target = (location.hash || '#loader1').slice(1);
+  switchTab(target);
+}
+
 tabButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
-    tabButtons.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
     const tab = btn.dataset.tab;
-    Object.entries(panels).forEach(([key, panel]) => {
-      panel.classList.toggle('hidden', key !== tab);
-    });
+    // Update URL to reflect navigation
+    if (location.hash.slice(1) !== tab) {
+      location.hash = `#${tab}`;
+    } else {
+      // If already on the same hash, still enforce UI state
+      switchTab(tab);
+    }
   });
 });
+
+window.addEventListener('hashchange', handleHashChange);
+// Initialize on load
+handleHashChange();
 
 // Overlay logic for loader1 and loader2
 const overlay = document.getElementById('overlay');
