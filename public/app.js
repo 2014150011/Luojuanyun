@@ -23,9 +23,12 @@ function switchTab(tabKey) {
 }
 
 function handleHashChange() {
-  // Auto-close overlay when navigating between tabs
-  if (!overlay.classList.contains('hidden')) {
-    closeOverlay();
+  // Auto-close overlay when navigating between tabs (safe even before overlay vars are initialized)
+  const overlayEl = document.getElementById('overlay');
+  if (overlayEl && !overlayEl.classList.contains('hidden')) {
+    overlayEl.classList.add('hidden');
+    const iframeEl = document.getElementById('overlay-iframe');
+    if (iframeEl) iframeEl.src = 'about:blank';
   }
   const target = (location.hash || '#loader1').slice(1);
   switchTab(target);
