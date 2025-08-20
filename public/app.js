@@ -23,6 +23,10 @@ function switchTab(tabKey) {
 }
 
 function handleHashChange() {
+  // Auto-close overlay when navigating between tabs
+  if (!overlay.classList.contains('hidden')) {
+    closeOverlay();
+  }
   const target = (location.hash || '#loader1').slice(1);
   switchTab(target);
 }
@@ -46,9 +50,16 @@ handleHashChange();
 const overlay = document.getElementById('overlay');
 const overlayIframe = document.getElementById('overlay-iframe');
 const btnExit = document.getElementById('btn-exit-fullscreen');
+const appHeader = document.querySelector('.app-header');
+
+function updateOverlayOffset() {
+  const headerHeight = appHeader?.offsetHeight || 0;
+  overlay.style.setProperty('--overlay-top', `${headerHeight}px`);
+}
 
 function openOverlay(url) {
   overlayIframe.src = url;
+  updateOverlayOffset();
   overlay.classList.remove('hidden');
 }
 
@@ -70,6 +81,24 @@ overlay.addEventListener('click', (e) => {
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
     closeOverlay();
+  }
+});
+
+// Close overlay when clicking top tabs
+const tabsNav = document.querySelector('.tabs');
+if (tabsNav) {
+  tabsNav.addEventListener('click', (e) => {
+    const el = e.target;
+    if (el && el.classList && el.classList.contains('tab') && !overlay.classList.contains('hidden')) {
+      closeOverlay();
+    }
+  });
+}
+
+// Recalculate overlay offset on resize while open
+window.addEventListener('resize', () => {
+  if (!overlay.classList.contains('hidden')) {
+    updateOverlayOffset();
   }
 });
 
