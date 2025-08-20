@@ -3,22 +3,48 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>演示 X</title>
+    <title>产品性能评估 - 演示 X</title>
     <style>
+      :root{--text:#0f172a;--muted:#475569}
       html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto}
-      body{display:grid;grid-template-rows:auto 1fr;gap:12px;padding:12px;background:#0b1220;color:#e6eaf2}
-      header{display:flex;align-items:center;justify-content:space-between;padding:12px;border:1px solid #22304e;border-radius:12px;background:rgba(255,255,255,0.04)}
-      main{border:1px solid #22304e;border-radius:12px;background:rgba(255,255,255,0.03);display:grid;place-items:center}
+      body{background:#f8fafc;color:var(--text)}
+      .container{max-width:1000px;margin:0 auto;padding:24px 16px}
+      .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin-bottom:16px}
+      h1{margin:0 0 8px}
+      h2{margin:0 0 12px;font-size:18px}
+      p{color:var(--muted)}
+      table{width:100%;border-collapse:collapse}
+      th,td{border:1px solid #e2e8f0;padding:10px;text-align:left}
+      th{background:#f1f5f9}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+      img{width:100%;border-radius:12px;border:1px solid #e2e8f0}
     </style>
   </head>
   <body>
-    <header>
-      <div>演示 X 面板</div>
-      <small>可嵌入于主页面 iframe 内全屏显示</small>
-    </header>
-    <main>
-      <p>这是一个展示布局的示例页面。</p>
-    </main>
+    <div class="container">
+      <div class="card">
+        <h1>产品性能评估</h1>
+        <p>以稳定性、吞吐能力与延迟为核心维度，对不同环境进行对比测试。</p>
+      </div>
+      <div class="card grid">
+        <img src="../images/figure3.svg" alt="性能曲线图" />
+        <div>
+          <h2>测试摘要</h2>
+          <table>
+            <thead><tr><th>环境</th><th>P95 延迟</th><th>吞吐</th></tr></thead>
+            <tbody>
+              <tr><td>本地</td><td>112 ms</td><td>2.1k RPS</td></tr>
+              <tr><td>测试</td><td>98 ms</td><td>2.6k RPS</td></tr>
+              <tr><td>生产</td><td>87 ms</td><td>3.0k RPS</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>结论</h2>
+        <p>优化后的版本在生产环境下稳定性与吞吐均有提升，建议逐步扩大灰度范围并持续观测。</p>
+      </div>
+    </div>
   </body>
   </html>
 

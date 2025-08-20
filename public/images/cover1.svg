@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="#0b1220"/>
+  <circle cx="280" cy="180" r="180" fill="url(#g)" opacity="0.35"/>
+  <circle cx="980" cy="420" r="220" fill="url(#g)" opacity="0.25"/>
+  <text x="60" y="520" font-family="Inter, sans-serif" font-size="64" fill="#e6eaf2" font-weight="700">季度运营分析报告</text>
+</svg>

@@ -3,18 +3,49 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>演示 Y</title>
+    <title>项目里程碑汇报 - 演示 Y</title>
     <style>
+      :root{--text:#0f172a;--muted:#475569}
       html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto}
-      body{display:grid;place-items:center;background:conic-gradient(from 180deg at 50% 50%, #0b1220, #10172a);color:#e6eaf2}
-      .wrap{max-width:720px;padding:28px;border-radius:16px;border:1px solid #314061;background:rgba(255,255,255,0.04)}
-      h1{margin:0 0 12px}
+      body{background:#f8fafc;color:var(--text)}
+      .container{max-width:960px;margin:0 auto;padding:28px 14px}
+      .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin-bottom:16px}
+      h1{margin:0 0 10px}
+      h2{margin:0 0 12px;font-size:18px}
+      ul{margin:0;padding-left:18px}
+      li{margin:6px 0}
+      img{width:100%;border-radius:12px;border:1px solid #e2e8f0}
+      table{width:100%;border-collapse:collapse}
+      th,td{border:1px solid #e2e8f0;padding:10px;text-align:left}
+      th{background:#f1f5f9}
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <h1>演示 Y</h1>
-      <p>用于测试功能3的全屏加载效果。</p>
+    <div class="container">
+      <div class="card">
+        <h1>项目里程碑汇报</h1>
+        <img src="../images/cover3.svg" alt="项目封面" />
+      </div>
+      <div class="card">
+        <h2>关键里程碑</h2>
+        <ul>
+          <li>M1：需求分析与范围确认（完成）</li>
+          <li>M2：架构设计与评审（完成）</li>
+          <li>M3：核心模块开发（进行中）</li>
+          <li>M4：联调与压测（计划）</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>风险与缓解措施</h2>
+        <table>
+          <thead><tr><th>风险</th><th>影响</th><th>缓解措施</th></tr></thead>
+          <tbody>
+            <tr><td>第三方接口不稳定</td><td>联调延期</td><td>引入熔断与降级策略</td></tr>
+            <tr><td>关键人力冲突</td><td>进度波动</td><td>建立双人备份机制</td></tr>
+            <tr><td>上线窗口受限</td><td>延迟发布</td><td>准备灰度与回滚剧本</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </body>
   </html>

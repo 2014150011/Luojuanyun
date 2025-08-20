@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="420" viewBox="0 0 1000 420">
+  <rect width="1000" height="420" fill="#ffffff"/>
+  <g transform="translate(60,40)">
+    <text x="0" y="0" font-family="Inter, sans-serif" font-size="18" fill="#0f172a">性能曲线示意</text>
+  </g>
+  <g transform="translate(60,80)">
+    <rect x="0" y="0" width="880" height="280" fill="#f8fafc" stroke="#e2e8f0"/>
+    <polyline points="20,220 100,200 180,190 260,160 340,150 420,140 500,130 580,120 660,110 740,105 820,100" fill="none" stroke="#1d4ed8" stroke-width="3"/>
+    <polyline points="20,240 100,220 180,210 260,200 340,195 420,190 500,185 580,180 660,178 740,176 820,175" fill="none" stroke="#22c55e" stroke-width="3"/>
+  </g>
+</svg>

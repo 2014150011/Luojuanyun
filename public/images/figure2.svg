@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="420" viewBox="0 0 1000 420">
+  <rect width="1000" height="420" fill="#ffffff"/>
+  <g transform="translate(60,40)">
+    <text x="0" y="0" font-family="Inter, sans-serif" font-size="18" fill="#0f172a">价格带分布示意</text>
+  </g>
+  <g transform="translate(60,80)">
+    <rect x="0" y="0" width="880" height="280" fill="#f8fafc" stroke="#e2e8f0"/>
+    <g transform="translate(60,20)">
+      <rect x="0" y="60" width="180" height="180" fill="#bfdbfe"/>
+      <text x="0" y="260" font-family="Inter, sans-serif" font-size="14">0-99</text>
+      <rect x="260" y="30" width="180" height="210" fill="#93c5fd"/>
+      <text x="260" y="260" font-family="Inter, sans-serif" font-size="14">100-299</text>
+      <rect x="520" y="80" width="180" height="160" fill="#60a5fa"/>
+      <text x="520" y="260" font-family="Inter, sans-serif" font-size="14">300+</text>
+    </g>
+  </g>
+</svg>

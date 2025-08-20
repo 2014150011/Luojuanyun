@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520">
+  <rect width="1200" height="520" fill="#0b1220"/>
+  <rect x="70" y="90" width="1060" height="340" rx="18" fill="#0f172a" stroke="#22304e"/>
+  <text x="110" y="170" font-family="Inter, sans-serif" font-size="42" fill="#e6eaf2" font-weight="700">项目里程碑汇报</text>
+  <text x="110" y="220" font-family="Inter, sans-serif" font-size="18" fill="#b6c2db">范围、进度、风险与资源</text>
+</svg>

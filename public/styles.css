@@ -34,7 +34,7 @@ body {
 .title { font-weight: 700; letter-spacing: 0.2px; }
 
 .tabs { display: flex; gap: 8px; }
-.tab { appearance: none; border: 1px solid var(--border); background: rgba(18,26,43,0.6); color: var(--text); border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: .2s ease; }
+.tab { appearance: none; border: 1px solid var(--border); background: rgba(18,26,43,0.6); color: var(--text); border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: .2s ease; text-decoration: none; display: inline-flex; }
 .tab:hover { border-color: #2f3e62; transform: translateY(-1px); }
 .tab.active { background: linear-gradient(180deg, rgba(78,129,255,0.22), rgba(78,129,255,0.08)); border-color: #3a57a1; }
 

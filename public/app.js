@@ -28,15 +28,10 @@ function handleHashChange() {
 }
 
 tabButtons.forEach((btn) => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', (e) => {
     const tab = btn.dataset.tab;
-    // Update URL to reflect navigation
-    if (location.hash.slice(1) !== tab) {
-      location.hash = `#${tab}`;
-    } else {
-      // If already on the same hash, still enforce UI state
-      switchTab(tab);
-    }
+    // For <a> elements, allow default hash navigation, but still normalize state
+    setTimeout(() => switchTab(tab), 0);
   });
 });
 
@@ -60,6 +55,20 @@ function closeOverlay() {
 }
 
 btnExit.addEventListener('click', closeOverlay);
+
+// Close overlay when clicking on the dim background (not toolbar/iframe)
+overlay.addEventListener('click', (e) => {
+  if (e.target === overlay) {
+    closeOverlay();
+  }
+});
+
+// Close with Esc
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+    closeOverlay();
+  }
+});
 
 document.getElementById('btn-open-loader1').addEventListener('click', () => {
   const url = document.getElementById('select-loader1').value;

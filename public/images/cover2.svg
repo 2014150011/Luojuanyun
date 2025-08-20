@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520">
+  <rect width="1200" height="520" fill="#0b1220"/>
+  <rect x="60" y="80" width="1080" height="360" rx="18" fill="#0f172a" stroke="#22304e"/>
+  <text x="100" y="170" font-family="Inter, sans-serif" font-size="42" fill="#e6eaf2" font-weight="700">市场洞察简报</text>
+  <text x="100" y="220" font-family="Inter, sans-serif" font-size="18" fill="#b6c2db">价格带结构、竞争格局、用户偏好</text>
+</svg>

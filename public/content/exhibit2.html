@@ -3,23 +3,43 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>展品 B</title>
+    <title>市场洞察简报 - 展品 B</title>
     <style>
+      :root{--text:#0f172a;--muted:#475569}
       html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto}
-      body{display:grid;place-items:center;background:radial-gradient(600px 300px at 20% -20%, rgba(110,168,254,.2), transparent 60%), #0b1220; color:#e6eaf2}
-      .box{max-width:760px;padding:24px;border-radius:16px;border:1px solid #324061;background:rgba(255,255,255,0.05)}
+      body{background:#f8fafc;color:var(--text)}
+      .container{max-width:1000px;margin:0 auto;padding:32px 16px}
+      .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin-bottom:16px}
       h1{margin:0 0 8px}
-      ul{line-height:1.8}
+      h2{margin:0 0 12px;font-size:18px}
+      p{color:var(--muted)}
+      table{width:100%;border-collapse:collapse}
+      th,td{border:1px solid #e2e8f0;padding:10px;text-align:left}
+      th{background:#f1f5f9}
     </style>
   </head>
   <body>
-    <div class="box">
-      <h1>展品 B</h1>
-      <ul>
-        <li>支持响应式布局</li>
-        <li>示例内容用于本地加载</li>
-        <li>可通过下拉框选择并全屏展示</li>
-      </ul>
+    <div class="container">
+      <div class="card">
+        <h1>市场洞察简报</h1>
+        <p>基于近 90 天数据，对目标市场的规模、竞争格局与价格带进行概要分析。</p>
+        <img src="../images/cover2.svg" alt="市场洞察封面" style="width:100%;border-radius:12px;border:1px solid #e2e8f0" />
+      </div>
+      <div class="card">
+        <h2>品类价格带分布</h2>
+        <table>
+          <thead><tr><th>价格带</th><th>销量占比</th><th>主流品牌</th></tr></thead>
+          <tbody>
+            <tr><td>¥0-99</td><td>28.1%</td><td>品牌 D、品牌 F</td></tr>
+            <tr><td>¥100-299</td><td>44.5%</td><td>品牌 A、品牌 C</td></tr>
+            <tr><td>¥300+ </td><td>27.4%</td><td>品牌 B、品牌 E</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h2>图像示例</h2>
+        <img src="../images/figure2.svg" alt="价格带示意图" style="width:100%;border-radius:12px;border:1px solid #e2e8f0" />
+      </div>
     </div>
   </body>
   </html>
