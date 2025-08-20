@@ -13,6 +13,17 @@ app.use(express.static(PUBLIC_DIR, {
   }
 }));
 
+// Serve local Chart.js for offline/robust chart rendering
+let chartUmdPath = null;
+try {
+  chartUmdPath = require.resolve('chart.js/dist/chart.umd.js');
+  app.get('/vendor/chart.umd.js', (_req, res) => {
+    res.sendFile(chartUmdPath);
+  });
+} catch (_) {
+  // If not installed, the CDN fallback in index.html will be used
+}
+
 // Fallback to index.html for root
 app.get('/', (_req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));

@@ -223,12 +223,19 @@ function generateAnswer(userText) {
           datasets: [{
             label: '访问量',
             data,
+            parsing: false,
             borderColor: '#6ea8fe',
-            backgroundColor: 'rgba(110,168,254,0.35)'
+            backgroundColor: type === 'line' ? 'transparent' : 'rgba(110,168,254,0.35)',
+            fill: type === 'line' ? false : true,
+            tension: 0.35,
+            pointRadius: type === 'line' ? 3 : 0,
+            pointBackgroundColor: '#6ea8fe'
           }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 300 },
           plugins: { legend: { labels: { color: '#e6eaf2' } } },
           scales: {
             x: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } },
