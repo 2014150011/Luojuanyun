@@ -168,6 +168,16 @@ const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 
 function appendMessage(role, content, chartSpec) {
+  // Create or reuse the last exchange block
+  let exchange = chatWindow.lastElementChild;
+  if (!exchange || !exchange.classList.contains('exchange') || (role === 'user' && exchange.dataset.hasUser === 'true') || (role === 'assistant' && exchange.dataset.hasAssistant === 'true')) {
+    exchange = document.createElement('div');
+    exchange.className = 'exchange';
+    exchange.dataset.hasUser = 'false';
+    exchange.dataset.hasAssistant = 'false';
+    chatWindow.appendChild(exchange);
+  }
+
   const wrapper = document.createElement('div');
   wrapper.className = `message msg-role-${role}`;
 
@@ -199,7 +209,9 @@ function appendMessage(role, content, chartSpec) {
 
   wrapper.appendChild(avatar);
   wrapper.appendChild(bubble);
-  chatWindow.appendChild(wrapper);
+  exchange.appendChild(wrapper);
+  if (role === 'user') exchange.dataset.hasUser = 'true';
+  if (role === 'assistant') exchange.dataset.hasAssistant = 'true';
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
