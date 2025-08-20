@@ -1,0 +1,14 @@
+{
+  "name": "local-frontend-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local frontend app with content loader, chat, and charts",
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
+

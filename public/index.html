@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>本地前端工程演示</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <div class="logo">⚡</div>
+          <div class="title">前端工程演示</div>
+        </div>
+        <nav class="tabs" role="tablist" aria-label="主功能切换">
+          <button class="tab active" data-tab="loader1" role="tab" aria-selected="true">功能1</button>
+          <button class="tab" data-tab="chat" role="tab" aria-selected="false">功能2</button>
+          <button class="tab" data-tab="loader2" role="tab" aria-selected="false">功能3</button>
+        </nav>
+      </header>
+
+      <main class="app-main">
+        <!-- 功能1：下拉加载并全屏展示 -->
+        <section class="panel" id="panel-loader1" role="tabpanel">
+          <div class="card">
+            <h2>功能1：选择并全屏展示 HTML</h2>
+            <div class="controls">
+              <label for="select-loader1">选择内容：</label>
+              <select id="select-loader1">
+                <option value="/content/exhibit1.html">展品 A</option>
+                <option value="/content/exhibit2.html">展品 B</option>
+              </select>
+              <button id="btn-open-loader1" class="primary">确定并全屏</button>
+            </div>
+            <div class="hint">将以覆盖层全屏展示所选 HTML 内容。</div>
+          </div>
+        </section>
+
+        <!-- 功能2：对话，支持文本+图表回答 -->
+        <section class="panel hidden" id="panel-chat" role="tabpanel">
+          <div class="chat">
+            <div class="chat-window" id="chat-window" aria-live="polite"></div>
+            <form id="chat-form" class="chat-form" autocomplete="off">
+              <input id="chat-input" type="text" placeholder="输入你的问题，例如：展示一张 7 天访问量的柱状图" />
+              <button type="submit" class="primary">发送</button>
+            </form>
+          </div>
+        </section>
+
+        <!-- 功能3：第二组下拉加载并全屏展示 -->
+        <section class="panel hidden" id="panel-loader2" role="tabpanel">
+          <div class="card">
+            <h2>功能3：选择并全屏展示 HTML</h2>
+            <div class="controls">
+              <label for="select-loader2">选择内容：</label>
+              <select id="select-loader2">
+                <option value="/content/showcase1.html">演示 X</option>
+                <option value="/content/showcase2.html">演示 Y</option>
+              </select>
+              <button id="btn-open-loader2" class="primary">确定并全屏</button>
+            </div>
+            <div class="hint">同样会全屏覆盖展示选中 HTML 内容。</div>
+          </div>
+        </section>
+      </main>
+
+      <!-- 全屏覆盖层 -->
+      <div class="overlay hidden" id="overlay" aria-modal="true" role="dialog">
+        <div class="overlay-toolbar">
+          <button id="btn-exit-fullscreen" class="ghost">退出</button>
+        </div>
+        <iframe id="overlay-iframe" title="全屏展示内容" sandbox="allow-scripts allow-same-origin allow-popups" referrerpolicy="no-referrer"></iframe>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+  </html>
+
