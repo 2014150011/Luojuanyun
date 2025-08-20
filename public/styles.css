@@ -56,11 +56,12 @@ button { border: none; border-radius: 10px; padding: 10px 14px; cursor: pointer;
 /* Chat */
 .chat { display: grid; grid-template-rows: 1fr auto; gap: 12px; min-height: 60vh; }
 .chat-window { display: flex; flex-direction: column; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: rgba(12,18,31,0.6); overflow: auto; }
-.message { display: grid; grid-template-columns: 32px 1fr; gap: 10px; align-items: start; }
+.message { display: flex; align-items: flex-start; gap: 10px; width: 100%; }
 .msg-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,0.08); color: #9fb4ff; font-weight: 700; }
-.msg-bubble { background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+.msg-bubble { background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; max-width: 72%; }
 .msg-role-user .msg-avatar { color: #22d3ee; }
 .msg-role-assistant .msg-avatar { color: #a5b4fc; }
+.msg-role-assistant { justify-content: flex-end; flex-direction: row-reverse; }
 .msg-content { white-space: pre-wrap; line-height: 1.6; }
 .msg-chart { margin-top: 8px; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 8px; border: 1px dashed #2b3a5a; }
 
