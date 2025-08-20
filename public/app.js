@@ -173,7 +173,11 @@ function appendMessage(role, content, chartSpec) {
 
   const avatar = document.createElement('div');
   avatar.className = 'msg-avatar';
-  avatar.textContent = role === 'user' ? 'U' : 'A';
+  const img = document.createElement('img');
+  img.className = 'msg-avatar-img';
+  img.alt = role === 'user' ? '用户' : '助手';
+  img.src = role === 'user' ? 'images/user.svg' : 'images/assistant.svg';
+  avatar.appendChild(img);
 
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';
@@ -189,7 +193,8 @@ function appendMessage(role, content, chartSpec) {
     const canvas = document.createElement('canvas');
     chartContainer.appendChild(canvas);
     bubble.appendChild(chartContainer);
-    renderChartInMessage(canvas, chartSpec);
+    // Always defer chart render to ensure canvas is in DOM and visible
+    requestAnimationFrame(() => renderChartInMessage(canvas, chartSpec));
   }
 
   wrapper.appendChild(avatar);
@@ -240,7 +245,22 @@ function generateAnswer(userText) {
 
 function renderChartInMessage(canvas, spec) {
   try {
-    new Chart(canvas.getContext('2d'), spec);
+    const ctx = canvas.getContext('2d');
+    const merged = {
+      type: spec.type || 'bar',
+      data: spec.data,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#e6eaf2' } } },
+        scales: {
+          x: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+          y: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+        },
+        ...(spec.options || {})
+      }
+    };
+    new Chart(ctx, merged);
   } catch (err) {
     console.error('Chart render error', err);
   }
