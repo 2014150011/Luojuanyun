@@ -23,7 +23,7 @@ const puppeteer = require('puppeteer');
     function ma(data, w){ const out=[]; for(let i=0;i<data.length;i++){ const s=Math.max(0,i-w+1); const seg=data.slice(s,i+1); const m=seg.reduce((a,b)=>a+b,0)/seg.length; out.push(Number(m.toFixed(4))); } return out; }
     function daterange(start, end){ const out=[]; const s=new Date(start), e=new Date(end); for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){ out.push(d.toISOString().slice(0,10)); } return out; }
     // 使用完整日期作为类目，配合 formatter 仅在每月首日显示 YYYY-MM
-    const productTitle = '上银理财“\u53cc周利”系列开放式(14天)理财产品WPTK24D1404期';
+    const productTitle = '上银理财“双周利”系列开放式(14天)理财产品WPTK24D1404期';
     const rangeText = '净值日期：2024-05-12 ~ 2025-05-27';
     const days = daterange('2024-05-12','2025-05-27');
     const nav = genSeriesByDates(days, 1.0000, 0.006);
@@ -40,7 +40,7 @@ const puppeteer = require('puppeteer');
       dataZoom:[{type:'inside'},{type:'slider',height:16,bottom:20,backgroundColor:'#f1f5f9', borderColor:'#e2e8f0'}],
       xAxis:{ type:'category', data: days, boundaryGap: true,
         axisLabel:{ color:'#374151', interval: 0, rotate: 0, margin: 12, hideOverlap: true,
-          showMinLabel: true, showMaxLabel: true,
+          showMinLabel: false, showMaxLabel: true,
           formatter: function(value, idx){ return value && value.slice(8,10)==='01' ? value.slice(0,7) : ''; }
         },
         axisLine:{ lineStyle:{ color:'#cbd5e1' } }, axisTick:{ show:false } },
