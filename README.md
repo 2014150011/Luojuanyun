@@ -77,14 +77,19 @@ setTimeout(() => {
 }, 3000);
 ```
 
-### 修改展品 B（exhibit2.html）中的“基金历史净值（ECharts）”图表
 ### 生成并使用静态净值图（ECharts 渲染为 PNG）
-- 生成脚本：`scripts/render_fund_chart.js`（基于 Puppeteer + ECharts 渲染 800x480 PNG）。
+- 生成脚本：`scripts/render_fund_chart.js`（基于 Puppeteer + ECharts 渲染 1200x675 PNG）。
 - 生成命令：`npm run render:fund`，输出文件：`public/images/fund_nav.png`。
 - 页面使用：`public/content/exhibit2.html` 章节“基金产品历史净值（静态图）”直接用 `<img src="../images/fund_nav.png" />` 引用，适合无 JS 场景或追求加载稳定性。
 - 修改方法：
-  - 在脚本中调整数据点数/波动：`genSeries(N, 初值, 波动)`，移动平均窗口：`ma(data, 窗口)`；
+  - 在脚本中调整数据点数/波动：`genSeriesByDates(日期数组, 初值, 波动)`，移动平均窗口：`ma(data, 窗口)`；
   - 调整配色与样式：`series` 的 `lineStyle/areaStyle`、`markPoint/markLine`；
   - 修改画布尺寸：修改 `page.setViewport({ width, height, deviceScaleFactor })`。
+
+### 图表怎么看（示例“基金历史净值”）
+- 单位净值 (NAV)：反映产品每日/每期净值变化，越高通常代表历史表现越好。
+- MA20（20 日移动平均）：近 20 日净值的均值，平滑短期波动，辅助判断趋势；MA20 向上多表示阶段性上行趋势。
+- 最新标注：显示最近日期的净值值点，便于快速定位最新水平。
+- 读图建议：结合 NAV 与 MA20 的相对位置与斜率观察趋势变化；配合极值标注与均值线判断波动区间与回撤幅度。
 
 # Luojuanyun
