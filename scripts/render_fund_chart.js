@@ -10,8 +10,11 @@ const puppeteer = require('puppeteer');
   <html><head><meta charset="utf-8" />
   <style>
     html,body,#app{margin:0;padding:0;width:1200px;height:675px;background:#ffffff}
-    body{font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;}
+    body{font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;}
   </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
   </head><body><div id="app"></div>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
   <script>
@@ -19,6 +22,7 @@ const puppeteer = require('puppeteer');
     function genSeriesByDates(dates, base, vol){ const arr=[]; let v=base; for(let i=0;i<dates.length;i++){ v=v*(1+(Math.random()-0.5)*vol); if(v<0.6) v = 0.6 + Math.random()*0.05; arr.push(Number(v.toFixed(4))); } return arr; }
     function ma(data, w){ const out=[]; for(let i=0;i<data.length;i++){ const s=Math.max(0,i-w+1); const seg=data.slice(s,i+1); const m=seg.reduce((a,b)=>a+b,0)/seg.length; out.push(Number(m.toFixed(4))); } return out; }
     function daterange(start, end){ const out=[]; const s=new Date(start), e=new Date(end); for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){ out.push(d.toISOString().slice(0,10)); } return out; }
+    function monthTicks(labels){ const out=[]; let lastMonth=''; for(const d of labels){ const m=d.slice(0,7); if(m!==lastMonth){ out.push(d); lastMonth=m; } else out.push(''); } return out; }
     const productTitle = '上银理财“\u53cc周利”系列开放式(14天)理财产品WPTK24D1404期';
     const rangeText = '净值日期：2024-05-12 ~ 2025-05-27';
     const days = daterange('2024-05-12','2025-05-27');
@@ -34,7 +38,7 @@ const puppeteer = require('puppeteer');
       grid:{ left:60,right:40,top:70,bottom:70 },
       legend:{ data:['单位净值 (NAV)','MA20'], top: 20, right: 20, textStyle:{ color:'#111827' }, icon:'roundRect' },
       dataZoom:[{type:'inside'},{type:'slider',height:16,bottom:20,backgroundColor:'#f1f5f9', borderColor:'#e2e8f0'}],
-      xAxis:{ type:'category', data:days, axisLabel:{ color:'#374151', interval: 14 }, axisLine:{ lineStyle:{ color:'#cbd5e1' } }, axisTick:{ show:false } },
+      xAxis:{ type:'category', data: monthTicks(days), axisLabel:{ color:'#374151', interval: 0, rotate: 0 }, axisLine:{ lineStyle:{ color:'#cbd5e1' } }, axisTick:{ show:false } },
       yAxis:{ type:'value', name:'单位净值', nameTextStyle:{ color:'#374151' }, axisLabel:{ color:'#374151', formatter:(val)=> Number(val).toFixed(4) }, splitLine:{ lineStyle:{ color:'#e5e7eb' } } },
       series:[
         { name:'单位净值 (NAV)', type:'line', data:nav, symbol:'none', smooth:true, lineStyle:{ color:'#1f3a8a', width:2 }, areaStyle:{ color:faintArea }, 
