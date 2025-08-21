@@ -71,22 +71,23 @@
       </div>
 
       <div class="card">
-        <h2>五、基金产品历史净值</h2>
+        <h2>五、基金产品历史净值（ECharts）</h2>
         <div class="chart-wrap">
           <div class="chart-card">
-            <canvas id="fundNavChart" height="240"></canvas>
+            <div id="fundNavEChart" style="width:100%;height:320px"></div>
           </div>
           <div class="chart-card">
             <h3 style="margin:6px 0 8px 0;font-size:16px">说明</h3>
-            <p class="muted">示例数据覆盖最近 180 天的单位净值（NAV）与 20 日移动平均线（MA20）。可在浏览器端进行主题化样式修改。</p>
+            <p class="muted">示例数据覆盖最近 180 天的单位净值（NAV）与 20 日移动平均线（MA20）。含数据缩放、峰值标注与均值参考线。</p>
             <ul>
-              <li>单位净值：蓝线，柱状阴影标示涨跌幅</li>
-              <li>MA20：紫线，平滑趋势</li>
-              <li>交互：悬停查看具体数值</li>
+              <li>单位净值：蓝线，渐变填充</li>
+              <li>MA20：紫线，虚线表示</li>
+              <li>交互：缩放/拖动、悬停提示、峰值标注</li>
             </ul>
           </div>
         </div>
         <p class="muted" style="margin-top:8px">提示：本图仅为演示用途，数据随机生成，不构成投资建议。</p>
+        <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
         <script>
           (function(){
             function genSeries(n, base, vol){
@@ -98,51 +99,46 @@
               const out=[]; for(let i=0;i<data.length;i++){ const s=Math.max(0,i-w+1); const seg=data.slice(s,i+1); const m=seg.reduce((a,b)=>a+b,0)/seg.length; out.push(Number(m.toFixed(4))); }
               return out;
             }
-            const days = Array.from({length:180}, (_,i)=>`D${i+1}`);
-            const nav = genSeries(180, 1.0000, 0.02);
+            const N = 180;
+            const days = Array.from({length:N}, (_,i)=>`D${i+1}`);
+            const nav = genSeries(N, 1.0000, 0.02);
             const ma20 = ma(nav, 20);
-            const ctx = document.getElementById('fundNavChart').getContext('2d');
-            const gradient = ctx.createLinearGradient(0,0,0,240);
-            gradient.addColorStop(0, 'rgba(110,168,254,0.35)');
-            gradient.addColorStop(1, 'rgba(110,168,254,0.00)');
-            new Chart(ctx, {
-              data: {
-                labels: days,
-                datasets: [
-                  {
-                    type: 'line',
-                    label: '单位净值 (NAV)',
-                    data: nav,
-                    borderColor: '#4c86f7',
-                    backgroundColor: gradient,
-                    tension: 0.25,
-                    pointRadius: 0,
-                    fill: true
-                  },
-                  {
-                    type: 'line',
-                    label: 'MA20',
-                    data: ma20,
-                    borderColor: '#a78bfa',
-                    borderDash: [4,4],
-                    tension: 0.2,
-                    pointRadius: 0
-                  }
-                ]
-              },
-              options: {
-                responsive: true,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                  legend: { labels: { color: '#0f172a' } },
-                  tooltip: { callbacks: { label: (ctx)=> `${ctx.dataset.label}: ${ctx.parsed.y}` } }
+            const el = document.getElementById('fundNavEChart');
+            const chart = echarts.init(el);
+            const gradient = {
+              type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: 'rgba(110,168,254,0.35)' },
+                { offset: 1, color: 'rgba(110,168,254,0.00)' }
+              ]
+            };
+            const avg = (nav.reduce((a,b)=>a+b,0)/nav.length).toFixed(4);
+            const option = {
+              tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+              grid: { left: 40, right: 24, top: 24, bottom: 60 },
+              legend: { data: ['单位净值 (NAV)','MA20'] },
+              dataZoom: [
+                { type: 'inside' },
+                { type: 'slider', height: 18, bottom: 24 }
+              ],
+              xAxis: { type: 'category', data: days, axisLabel: { color: '#475569' }, axisLine: { lineStyle: { color: '#94a3b8' } }, axisTick: { show: false } },
+              yAxis: { type: 'value', axisLabel: { color: '#475569' }, splitLine: { lineStyle: { color: '#e2e8f0' } } },
+              series: [
+                {
+                  name: '单位净值 (NAV)', type: 'line', data: nav,
+                  symbol: 'none', smooth: true, lineStyle: { color: '#4c86f7', width: 2 },
+                  areaStyle: { color: gradient },
+                  markPoint: { data: [{ type: 'max', name: '最高' }, { type: 'min', name: '最低' }] },
+                  markLine: { data: [{ name: '均值', yAxis: avg }] }
                 },
-                scales: {
-                  x: { ticks: { color: '#475569', maxTicksLimit: 12 }, grid: { color: '#e2e8f0' } },
-                  y: { ticks: { color: '#475569' }, grid: { color: '#e2e8f0' } }
+                {
+                  name: 'MA20', type: 'line', data: ma20,
+                  symbol: 'none', smooth: true, lineStyle: { color: '#a78bfa', width: 2, type: 'dashed' }
                 }
-              }
-            });
+              ]
+            };
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
           })();
         </script>
       </div>
