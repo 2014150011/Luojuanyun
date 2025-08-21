@@ -168,7 +168,7 @@ const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 const chatPresets = document.querySelectorAll('.preset');
 
-function appendMessage(role, content, chartSpec) {
+function appendMessage(role, content, chartSpec, tableSpec, imageSpec) {
   // Create or reuse the last exchange block
   let exchange = chatWindow.lastElementChild;
   if (!exchange || !exchange.classList.contains('exchange') || (role === 'user' && exchange.dataset.hasUser === 'true') || (role === 'assistant' && exchange.dataset.hasAssistant === 'true')) {
@@ -208,6 +208,20 @@ function appendMessage(role, content, chartSpec) {
     requestAnimationFrame(() => renderChartInMessage(canvas, chartSpec));
   }
 
+  if (tableSpec) {
+    const tableContainer = document.createElement('div');
+    tableContainer.className = 'msg-table';
+    renderTableInMessage(tableContainer, tableSpec);
+    bubble.appendChild(tableContainer);
+  }
+
+  if (imageSpec) {
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'msg-image';
+    renderImageInMessage(imageContainer, imageSpec);
+    bubble.appendChild(imageContainer);
+  }
+
   wrapper.appendChild(avatar);
   wrapper.appendChild(bubble);
   exchange.appendChild(wrapper);
@@ -224,7 +238,21 @@ function randomInt(min, max) {
 const presetAnswers = {
   '查看最近7天访问量（柱状图）': { text: '这是最近7天访问量的柱状图：', type: 'bar' },
   '查看最近7天访问量（折线图）': { text: '这是最近7天访问量的折线图：', type: 'line' },
-  '查看渠道表现表格': { text: '这是渠道表现表格：\n渠道A 24,310 | 次日留存 34.2%\n渠道B 18,905 | 次日留存 31.1%\n自然流量 12,770 | 次日留存 39.5%' }
+  '查看渠道表现表格': {
+    text: '这是渠道表现表格：',
+    table: {
+      headers: ['渠道', '新增用户', '次日留存', '7日留存', '客单价'],
+      rows: [
+        ['渠道 A', '24,310', '34.2%', '18.9%', '¥ 46.3'],
+        ['渠道 B', '18,905', '31.1%', '15.4%', '¥ 41.2'],
+        ['自然流量', '12,770', '39.5%', '21.7%', '¥ 35.8']
+      ]
+    }
+  },
+  '查看产品结构（图片）': {
+    text: '这是产品结构图（示意）：',
+    image: { src: 'images/complex-diagram.svg', alt: '产品结构示意', caption: '系统架构与数据流总览' }
+  }
 };
 
 function generateAnswer(userText) {
@@ -242,10 +270,12 @@ function generateAnswer(userText) {
           type: preset.type,
           data: { labels: days, datasets: [{ label: '访问量', data, borderColor: '#6ea8fe', backgroundColor: preset.type === 'line' ? 'transparent' : 'rgba(110,168,254,0.35)', fill: preset.type === 'line' ? false : true, tension: 0.35, pointRadius: preset.type === 'line' ? 3 : 0, pointBackgroundColor: '#6ea8fe' }] },
           options: { responsive: true, maintainAspectRatio: false, animation: { duration: 300 }, plugins: { legend: { labels: { color: '#e6eaf2' } } }, scales: { x: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } }, y: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } } } }
-        }
+        },
+        tableSpec: preset.table,
+        imageSpec: preset.image
       };
     }
-    return { text: preset.text };
+    return { text: preset.text, tableSpec: preset.table, imageSpec: preset.image };
   }
 
   // Fallback: general chart intent detection
@@ -297,7 +327,7 @@ if (chatForm && chatInput) {
     // Simulate async response
     setTimeout(() => {
       const answer = generateAnswer(value);
-      appendMessage('assistant', answer.text, answer.chartSpec);
+      appendMessage('assistant', answer.text, answer.chartSpec, answer.tableSpec, answer.imageSpec);
     }, 400);
   });
 }
@@ -311,9 +341,8 @@ if (chatPresets && chatPresets.length) {
       appendMessage('user', q);
       setTimeout(() => {
         const answer = generateAnswer(q);
-        appendMessage('assistant', answer.text, answer.chartSpec);
+        appendMessage('assistant', answer.text, answer.chartSpec, answer.tableSpec, answer.imageSpec);
       }, 200);
     });
   });
 }
-

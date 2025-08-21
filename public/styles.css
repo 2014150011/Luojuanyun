@@ -79,6 +79,12 @@ button { border: none; border-radius: 10px; padding: 10px 14px; cursor: pointer;
 .chat-window { gap: 32px; }
 .msg-chart { margin-top: 8px; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 8px; border: 1px dashed #2b3a5a; width: 100%; max-width: 560px; }
 .msg-chart canvas { width: 100% !important; height: 280px !important; display: block; }
+.msg-table { margin-top: 10px; }
+.msg-table table { width: 100%; border-collapse: collapse; }
+.msg-table th, .msg-table td { border: 1px solid #2b3a5a; padding: 8px 10px; text-align: left; }
+.msg-table th { background: rgba(255,255,255,0.06); }
+.msg-image { margin-top: 10px; }
+.msg-caption { color: var(--muted); font-size: 12px; margin-top: 6px; }
 
 .chat-form { display: grid; grid-template-columns: 1fr auto; gap: 12px; }
 .chat-form input { width: 100%; background:
