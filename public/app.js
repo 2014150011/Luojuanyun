@@ -236,10 +236,11 @@ function randomInt(min, max) {
 
 // Predefined Q&A map (tracking/埋点可在此扩展)
 const presetAnswers = {
-  '查看最近7天访问量（柱状图）': { text: '这是最近7天访问量的柱状图：', type: 'bar' },
-  '查看最近7天访问量（折线图）': { text: '这是最近7天访问量的折线图：', type: 'line' },
+  '查看最近7天访问量（柱状图）': { text: '这是最近7天访问量的柱状图：', type: 'bar', aliases: ['7天 访问量 柱状', '七天 柱状 图'] },
+  '查看最近7天访问量（折线图）': { text: '这是最近7天访问量的折线图：', type: 'line', aliases: ['7天 访问量 折线', '七天 折线 图'] },
   '查看渠道表现表格': {
     text: '这是渠道表现表格：',
+    aliases: ['渠道 表格', '渠道 表现', '渠道 数据'],
     table: {
       headers: ['渠道', '新增用户', '次日留存', '7日留存', '客单价'],
       rows: [
@@ -251,16 +252,30 @@ const presetAnswers = {
   },
   '查看产品结构（图片）': {
     text: '这是产品结构图（示意）：',
+    aliases: ['产品 结构', '产品 图片', '结构 图片'],
     image: { src: 'images/complex-diagram.svg', alt: '产品结构示意', caption: '系统架构与数据流总览' }
   }
 };
 
+function findPresetByQuestion(userText) {
+  // Exact key match via inclusion
+  const key = Object.keys(presetAnswers).find(k => userText.includes(k));
+  if (key) return presetAnswers[key];
+  // Alias fuzzy matching
+  for (const k of Object.keys(presetAnswers)) {
+    const cfg = presetAnswers[k];
+    if (cfg.aliases && cfg.aliases.some(alias => userText.includes(alias))) {
+      return cfg;
+    }
+  }
+  return null;
+}
+
 function generateAnswer(userText) {
   const lower = userText.toLowerCase();
   // Priority: preset answers
-  const presetKey = Object.keys(presetAnswers).find(k => userText.includes(k));
-  if (presetKey) {
-    const preset = presetAnswers[presetKey];
+  const preset = findPresetByQuestion(userText);
+  if (preset) {
     if (preset.type === 'bar' || preset.type === 'line') {
       const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       const data = Array.from({ length: 7 }, () => randomInt(20, 120));
