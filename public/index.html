@@ -58,6 +58,12 @@
         <section class="panel hidden" id="panel-chat" role="tabpanel">
           <div class="chat">
             <div class="chat-window" id="chat-window" aria-live="polite"></div>
+            <div class="chat-presets" aria-label="预设问题">
+              <span class="preset-label">快速提问：</span>
+              <button type="button" class="preset" data-q="查看最近7天访问量（柱状图）">7天访问量（柱状）</button>
+              <button type="button" class="preset" data-q="查看最近7天访问量（折线图）">7天访问量（折线）</button>
+              <button type="button" class="preset" data-q="查看渠道表现表格">渠道表现</button>
+            </div>
             <form id="chat-form" class="chat-form" autocomplete="off">
               <input id="chat-input" type="text" placeholder="输入你的问题，例如：展示一张 7 天访问量的柱状图" />
               <button type="submit" class="primary">发送</button>

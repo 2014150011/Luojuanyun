@@ -166,6 +166,7 @@ if (btnOpen2) {
 const chatWindow = document.getElementById('chat-window');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
+const chatPresets = document.querySelectorAll('.preset');
 
 function appendMessage(role, content, chartSpec) {
   // Create or reuse the last exchange block
@@ -219,47 +220,47 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// Predefined Q&A map (tracking/埋点可在此扩展)
+const presetAnswers = {
+  '查看最近7天访问量（柱状图）': { text: '这是最近7天访问量的柱状图：', type: 'bar' },
+  '查看最近7天访问量（折线图）': { text: '这是最近7天访问量的折线图：', type: 'line' },
+  '查看渠道表现表格': { text: '这是渠道表现表格：\n渠道A 24,310 | 次日留存 34.2%\n渠道B 18,905 | 次日留存 31.1%\n自然流量 12,770 | 次日留存 39.5%' }
+};
+
 function generateAnswer(userText) {
   const lower = userText.toLowerCase();
-  // If user asks for a chart, return a mock spec
+  // Priority: preset answers
+  const presetKey = Object.keys(presetAnswers).find(k => userText.includes(k));
+  if (presetKey) {
+    const preset = presetAnswers[presetKey];
+    if (preset.type === 'bar' || preset.type === 'line') {
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const data = Array.from({ length: 7 }, () => randomInt(20, 120));
+      return {
+        text: preset.text,
+        chartSpec: {
+          type: preset.type,
+          data: { labels: days, datasets: [{ label: '访问量', data, borderColor: '#6ea8fe', backgroundColor: preset.type === 'line' ? 'transparent' : 'rgba(110,168,254,0.35)', fill: preset.type === 'line' ? false : true, tension: 0.35, pointRadius: preset.type === 'line' ? 3 : 0, pointBackgroundColor: '#6ea8fe' }] },
+          options: { responsive: true, maintainAspectRatio: false, animation: { duration: 300 }, plugins: { legend: { labels: { color: '#e6eaf2' } } }, scales: { x: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } }, y: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } } } }
+        }
+      };
+    }
+    return { text: preset.text };
+  }
+
+  // Fallback: general chart intent detection
   if (lower.includes('图') || lower.includes('chart') || lower.includes('柱状') || lower.includes('折线') || lower.includes('line') || lower.includes('bar')) {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const data = Array.from({ length: 7 }, () => randomInt(20, 120));
     const type = lower.includes('折线') || lower.includes('line') ? 'line' : 'bar';
     return {
-      text: '这是根据你的描述生成的示例图表（随机数据）：',
-      chartSpec: {
-        type,
-        data: {
-          labels: days,
-          datasets: [{
-            label: '访问量',
-            data,
-            parsing: false,
-            borderColor: '#6ea8fe',
-            backgroundColor: type === 'line' ? 'transparent' : 'rgba(110,168,254,0.35)',
-            fill: type === 'line' ? false : true,
-            tension: 0.35,
-            pointRadius: type === 'line' ? 3 : 0,
-            pointBackgroundColor: '#6ea8fe'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: { duration: 300 },
-          plugins: { legend: { labels: { color: '#e6eaf2' } } },
-          scales: {
-            x: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } },
-            y: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } }
-          }
-        }
-      }
+      text: type === 'line' ? '这是折线图：' : '这是柱状图：',
+      chartSpec: { type, data: { labels: days, datasets: [{ label: '访问量', data, borderColor: '#6ea8fe', backgroundColor: type === 'line' ? 'transparent' : 'rgba(110,168,254,0.35)', fill: type === 'line' ? false : true, tension: 0.35, pointRadius: type === 'line' ? 3 : 0, pointBackgroundColor: '#6ea8fe' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#e6eaf2' } } }, scales: { x: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } }, y: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } } } } }
     };
   }
 
-  // Otherwise, simple echo with a helpful tip
-  return { text: `已收到：${userText}\n你也可以要求我画一张柱状图/折线图来展示数据噢。` };
+  // Fallback preset for non-chart known phrases could be added above; keep minimal text
+  return { text: '好的。' };
 }
 
 function renderChartInMessage(canvas, spec) {
@@ -298,6 +299,21 @@ if (chatForm && chatInput) {
       const answer = generateAnswer(value);
       appendMessage('assistant', answer.text, answer.chartSpec);
     }, 400);
+  });
+}
+
+// Preset buttons: click to send
+if (chatPresets && chatPresets.length) {
+  chatPresets.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || '';
+      if (!q) return;
+      appendMessage('user', q);
+      setTimeout(() => {
+        const answer = generateAnswer(q);
+        appendMessage('assistant', answer.text, answer.chartSpec);
+      }, 200);
+    });
   });
 }
 
