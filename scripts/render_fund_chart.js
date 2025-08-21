@@ -28,7 +28,7 @@ const puppeteer = require('puppeteer');
     const days = daterange('2024-05-12','2025-05-27');
     const nav = genSeriesByDates(days, 1.0000, 0.006);
     const ma20 = ma(nav, 20);
-    const el=document.getElementById('app'); const chart=echarts.init(el);
+    const el=document.getElementById('app'); const chart=echarts.init(el, null, { renderer: 'svg' });
     const faintArea={type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(31,58,138,0.06)'},{offset:1,color:'rgba(31,58,138,0.00)'}]};
     const avg=(nav.reduce((a,b)=>a+b,0)/nav.length).toFixed(4);
     const option={
