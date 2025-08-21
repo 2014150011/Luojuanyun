@@ -96,6 +96,12 @@
         </div>
         <iframe id="overlay-iframe" title="全屏展示内容" sandbox="allow-scripts allow-same-origin allow-popups" referrerpolicy="no-referrer"></iframe>
       </div>
+      <div class="overlay-loading hidden" id="overlay-loading" aria-hidden="true">
+        <div style="display:flex; flex-direction:column; align-items:center;">
+          <div class="spinner xl"></div>
+          <div class="loading-text">加载中…</div>
+        </div>
+      </div>
     </div>
 
     <script src="app.js?v=20250820"></script>
