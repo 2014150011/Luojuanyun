@@ -25,26 +25,23 @@ const puppeteer = require('puppeteer');
     const nav = genSeriesByDates(days, 1.0000, 0.006);
     const ma20 = ma(nav, 20);
     const el=document.getElementById('app'); const chart=echarts.init(el);
-    const gradient={type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(37,99,235,0.25)'},{offset:1,color:'rgba(37,99,235,0.00)'}]};
+    const faintArea={type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(31,58,138,0.06)'},{offset:1,color:'rgba(31,58,138,0.00)'}]};
     const avg=(nav.reduce((a,b)=>a+b,0)/nav.length).toFixed(4);
     const option={
       backgroundColor:'#ffffff',
       title:{ text: productTitle, left: 20, top: 10, textStyle:{ color:'#0f172a', fontSize:16, fontWeight:600 }, subtext: rangeText, subtextStyle:{ color:'#475569', fontSize:12 } },
       tooltip:{ trigger:'axis', axisPointer:{ type:'cross' } },
       grid:{ left:60,right:40,top:70,bottom:70 },
-      legend:{ data:['单位净值 (NAV)','MA20'], top: 20, right: 20, textStyle:{ color:'#0f172a' }, icon:'roundRect' },
+      legend:{ data:['单位净值 (NAV)','MA20'], top: 20, right: 20, textStyle:{ color:'#111827' }, icon:'roundRect' },
       dataZoom:[{type:'inside'},{type:'slider',height:16,bottom:20,backgroundColor:'#f1f5f9', borderColor:'#e2e8f0'}],
-      xAxis:{ type:'category', data:days, axisLabel:{ color:'#475569', interval: 14, rotate: 0 }, axisLine:{ lineStyle:{ color:'#cbd5e1' } }, axisTick:{ show:false } },
-      yAxis:{ type:'value', name:'单位净值', nameTextStyle:{ color:'#475569' }, axisLabel:{ color:'#475569', formatter:(val)=> Number(val).toFixed(4) }, splitLine:{ lineStyle:{ color:'#e5e7eb' } } },
-      graphic: [{
-        type:'text', left:'center', bottom: 6, style:{ text:'仅供内部报告使用', fill:'#9CA3AF', fontSize:12 }
-      }],
+      xAxis:{ type:'category', data:days, axisLabel:{ color:'#374151', interval: 14 }, axisLine:{ lineStyle:{ color:'#cbd5e1' } }, axisTick:{ show:false } },
+      yAxis:{ type:'value', name:'单位净值', nameTextStyle:{ color:'#374151' }, axisLabel:{ color:'#374151', formatter:(val)=> Number(val).toFixed(4) }, splitLine:{ lineStyle:{ color:'#e5e7eb' } } },
       series:[
-        { name:'单位净值 (NAV)', type:'line', data:nav, symbol:'none', smooth:true, lineStyle:{ color:'#0B5FFF', width:2 }, areaStyle:{ color:gradient }, 
-          markPoint:{ data:[{type:'max',name:'最高'},{type:'min',name:'最低'}, { coord:[days[days.length-1], nav[nav.length-1]], value: nav[nav.length-1], name:'latest', itemStyle:{ color:'#0B5FFF' }, label:{ formatter:function(p){ return '最新: ' + Number(p.value).toFixed(4); }, color:'#111827', backgroundColor:'#E5F0FF', padding:[2,6], borderRadius:4 } }] },
-          markLine:{ data:[{ name:'均值', yAxis:avg }] }
+        { name:'单位净值 (NAV)', type:'line', data:nav, symbol:'none', smooth:true, lineStyle:{ color:'#1f3a8a', width:2 }, areaStyle:{ color:faintArea }, 
+          markPoint:{ data:[ { coord:[days[days.length-1], nav[nav.length-1]], value: nav[nav.length-1], name:'latest', itemStyle:{ color:'#1f3a8a' }, label:{ formatter:function(p){ return '最新: ' + Number(p.value).toFixed(4); }, color:'#111827', backgroundColor:'#f3f4f6', borderColor:'#e5e7eb', borderWidth:1, padding:[2,6], borderRadius:3 } } ] },
+          markLine:{ data:[{ name:'均值', yAxis:avg }], lineStyle:{ type:'dashed', color:'#9ca3af' }, label:{ color:'#6b7280' } }
         },
-        { name:'MA20', type:'line', data:ma20, symbol:'none', smooth:true, lineStyle:{ color:'#7C3AED', width:2, type:'dashed' } }
+        { name:'MA20', type:'line', data:ma20, symbol:'none', smooth:true, lineStyle:{ color:'#6b7280', width:2, type:'dashed' } }
       ]
     };
     chart.setOption(option);
