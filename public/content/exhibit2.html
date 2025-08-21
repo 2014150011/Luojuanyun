@@ -22,6 +22,9 @@
       th,td{border:1px solid #e2e8f0;padding:10px;text-align:left}
       th{background:#f1f5f9}
       ul{margin:0;padding-left:18px}
+      .chart-wrap{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;align-items:stretch}
+      .chart-card{border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#fff}
+      .muted{color:#64748b;font-size:13px}
     </style>
   </head>
   <body>
@@ -68,7 +71,84 @@
       </div>
 
       <div class="card">
-        <h2>五、用户偏好</h2>
+        <h2>五、基金产品历史净值</h2>
+        <div class="chart-wrap">
+          <div class="chart-card">
+            <canvas id="fundNavChart" height="240"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3 style="margin:6px 0 8px 0;font-size:16px">说明</h3>
+            <p class="muted">示例数据覆盖最近 180 天的单位净值（NAV）与 20 日移动平均线（MA20）。可在浏览器端进行主题化样式修改。</p>
+            <ul>
+              <li>单位净值：蓝线，柱状阴影标示涨跌幅</li>
+              <li>MA20：紫线，平滑趋势</li>
+              <li>交互：悬停查看具体数值</li>
+            </ul>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:8px">提示：本图仅为演示用途，数据随机生成，不构成投资建议。</p>
+        <script>
+          (function(){
+            function genSeries(n, base, vol){
+              const arr=[]; let v=base;
+              for(let i=0;i<n;i++){ v = v * (1 + (Math.random()-0.5)*vol); arr.push(Number(v.toFixed(4))); }
+              return arr;
+            }
+            function ma(data, w){
+              const out=[]; for(let i=0;i<data.length;i++){ const s=Math.max(0,i-w+1); const seg=data.slice(s,i+1); const m=seg.reduce((a,b)=>a+b,0)/seg.length; out.push(Number(m.toFixed(4))); }
+              return out;
+            }
+            const days = Array.from({length:180}, (_,i)=>`D${i+1}`);
+            const nav = genSeries(180, 1.0000, 0.02);
+            const ma20 = ma(nav, 20);
+            const ctx = document.getElementById('fundNavChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0,0,0,240);
+            gradient.addColorStop(0, 'rgba(110,168,254,0.35)');
+            gradient.addColorStop(1, 'rgba(110,168,254,0.00)');
+            new Chart(ctx, {
+              data: {
+                labels: days,
+                datasets: [
+                  {
+                    type: 'line',
+                    label: '单位净值 (NAV)',
+                    data: nav,
+                    borderColor: '#4c86f7',
+                    backgroundColor: gradient,
+                    tension: 0.25,
+                    pointRadius: 0,
+                    fill: true
+                  },
+                  {
+                    type: 'line',
+                    label: 'MA20',
+                    data: ma20,
+                    borderColor: '#a78bfa',
+                    borderDash: [4,4],
+                    tension: 0.2,
+                    pointRadius: 0
+                  }
+                ]
+              },
+              options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                  legend: { labels: { color: '#0f172a' } },
+                  tooltip: { callbacks: { label: (ctx)=> `${ctx.dataset.label}: ${ctx.parsed.y}` } }
+                },
+                scales: {
+                  x: { ticks: { color: '#475569', maxTicksLimit: 12 }, grid: { color: '#e2e8f0' } },
+                  y: { ticks: { color: '#475569' }, grid: { color: '#e2e8f0' } }
+                }
+              }
+            });
+          })();
+        </script>
+      </div>
+
+      <div class="card">
+        <h2>六、用户偏好</h2>
         <ul>
           <li>偏好高性价比与套装组合</li>
           <li>关注物流时效与售后保障</li>
@@ -77,12 +157,12 @@
       </div>
 
       <div class="card alt">
-        <h2>六、区域分布</h2>
+        <h2>七、区域分布</h2>
         <p>一线与新一线贡献 62%，下沉市场保持稳步增长。</p>
       </div>
 
       <div class="card">
-        <h2>七、竞品对比</h2>
+        <h2>八、竞品对比</h2>
         <table>
           <thead><tr><th>品牌</th><th>优势</th><th>不足</th></tr></thead>
           <tbody>
@@ -94,7 +174,7 @@
       </div>
 
       <div class="card alt">
-        <h2>八、建议</h2>
+        <h2>九、建议</h2>
         <ul>
           <li>巩固中高价格带的差异化优势</li>
           <li>加大内容与口碑建设</li>

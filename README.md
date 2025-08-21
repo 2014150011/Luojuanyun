@@ -77,4 +77,21 @@ setTimeout(() => {
 }, 3000);
 ```
 
+### 修改展品 B（exhibit2.html）中的“基金历史净值”图表
+- 文件位置：`public/content/exhibit2.html`，章节“基金产品历史净值”。
+- 依赖：页面会复用根站点加载的 Chart.js（`server.js` 提供 `/vendor/chart.umd.js`），无需额外引入。
+- 可修改项：
+  - 数据生成：`genSeries(点数, 初始净值, 波动幅度)` 与 `ma(nav, 20)`（移动平均窗口）
+  - 样式：`borderColor`、`backgroundColor` 渐变、`tension`、`pointRadius`、`borderDash`
+  - 坐标轴与提示：`options.scales`、`plugins.tooltip`
+- 示例片段：
+```js
+const nav = genSeries(180, 1.0000, 0.02); // 点数/初值/波动
+const ma20 = ma(nav, 20);                  // 20 日移动平均
+new Chart(ctx, {
+  data: { labels: days, datasets: [ /* NAV 与 MA20 */ ] },
+  options: { /* 配色/交互/坐标轴 */ }
+});
+```
+
 # Luojuanyun
