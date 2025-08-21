@@ -94,14 +94,14 @@ function openOverlay(url) {
   if (!overlay || !overlayIframe) return;
   if (overlayLoading) overlayLoading.classList.remove('hidden');
   updateOverlayOffset();
-  // delay 5s then show iframe and load
+  // delay 3s then show iframe and load
   setTimeout(() => {
     overlayIframe.src = url;
     if (overlayLoading) overlayLoading.classList.add('hidden');
     overlay.classList.remove('hidden');
     // Try to enter real fullscreen for better UX
     requestFullscreen(overlay);
-  }, 5000);
+  }, 3000);
 }
 
 function closeOverlay() {
@@ -175,7 +175,7 @@ const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 const chatPresets = document.querySelectorAll('.preset');
 
-function appendMessage(role, content, chartSpec, tableSpec, imageSpec) {
+function appendMessage(role, content, chartSpec, tableSpec, imageSpec, listSpec) {
   // Create or reuse the last exchange block
   let exchange = chatWindow.lastElementChild;
   if (!exchange || !exchange.classList.contains('exchange') || (role === 'user' && exchange.dataset.hasUser === 'true') || (role === 'assistant' && exchange.dataset.hasAssistant === 'true')) {
@@ -228,6 +228,24 @@ function appendMessage(role, content, chartSpec, tableSpec, imageSpec) {
     bubble.appendChild(imageContainer);
   }
 
+  if (listSpec && Array.isArray(listSpec) && listSpec.length) {
+    const list = document.createElement('div');
+    list.style.marginTop = '8px';
+    listSpec.forEach((item) => {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.gap = '8px';
+      const marker = document.createElement('strong');
+      marker.textContent = '>';
+      const textNode = document.createElement('div');
+      textNode.textContent = item;
+      row.appendChild(marker);
+      row.appendChild(textNode);
+      list.appendChild(row);
+    });
+    bubble.appendChild(list);
+  }
+
   wrapper.appendChild(avatar);
   wrapper.appendChild(bubble);
   exchange.appendChild(wrapper);
@@ -260,6 +278,15 @@ const presetAnswers = {
     text: '这是产品结构图（示意）：',
     aliases: ['产品 结构', '产品 图片', '结构 图片'],
     image: { src: 'images/complex-diagram.svg', alt: '产品结构示意', caption: '系统架构与数据流总览' }
+  },
+  '输出关键结论要点（纯文本）': {
+    text: '以下为关键结论要点：',
+    aliases: ['关键 结论', '结论 要点'],
+    list: [
+      '增长主要来自自然流量与渠道A',
+      '复购提升与产品结构优化相关',
+      '建议扩大灰度并加强用户引导'
+    ]
   }
 };
 
@@ -291,10 +318,11 @@ function generateAnswer(userText) {
           options: { responsive: true, maintainAspectRatio: false, animation: { duration: 300 }, plugins: { legend: { labels: { color: '#e6eaf2' } } }, scales: { x: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } }, y: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } } } }
         },
         tableSpec: preset.table,
-        imageSpec: preset.image
+        imageSpec: preset.image,
+        listSpec: preset.list
       };
     }
-    return { text: preset.text, tableSpec: preset.table, imageSpec: preset.image };
+    return { text: preset.text, tableSpec: preset.table, imageSpec: preset.image, listSpec: preset.list };
   }
 
   // Fallback: general chart intent detection
@@ -304,7 +332,8 @@ function generateAnswer(userText) {
     const type = lower.includes('折线') || lower.includes('line') ? 'line' : 'bar';
     return {
       text: type === 'line' ? '这是折线图：' : '这是柱状图：',
-      chartSpec: { type, data: { labels: days, datasets: [{ label: '访问量', data, borderColor: '#6ea8fe', backgroundColor: type === 'line' ? 'transparent' : 'rgba(110,168,254,0.35)', fill: type === 'line' ? false : true, tension: 0.35, pointRadius: type === 'line' ? 3 : 0, pointBackgroundColor: '#6ea8fe' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#e6eaf2' } } }, scales: { x: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } }, y: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } } } } }
+      chartSpec: { type, data: { labels: days, datasets: [{ label: '访问量', data, borderColor: '#6ea8fe', backgroundColor: type === 'line' ? 'transparent' : 'rgba(110,168,254,0.35)', fill: type === 'line' ? false : true, tension: 0.35, pointRadius: type === 'line' ? 3 : 0, pointBackgroundColor: '#6ea8fe' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#e6eaf2' } } }, scales: { x: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } }, y: { ticks: { color: '#98a2b3' }, grid: { color: 'rgba(255,255,255,0.06)' } } } } },
+      listSpec: []
     };
   }
 
@@ -385,7 +414,6 @@ if (chatForm && chatInput) {
     appendMessage('user', value);
     chatInput.value = '';
 
-    // Typing indicator
     const typing = document.createElement('div');
     typing.className = 'message msg-role-assistant typing';
     typing.innerHTML = '<div class="msg-avatar"><img class="msg-avatar-img" src="images/assistant.svg" alt="助手"/></div><div class="msg-bubble"><div class="msg-content"><span class="spinner"></span> 正在思考…</div></div>';
@@ -400,12 +428,11 @@ if (chatForm && chatInput) {
     setTimeout(() => {
       const answer = generateAnswer(value);
       typing.remove();
-      appendMessage('assistant', answer.text, answer.chartSpec, answer.tableSpec, answer.imageSpec);
+      appendMessage('assistant', answer.text, answer.chartSpec, answer.tableSpec, answer.imageSpec, answer.listSpec);
     }, 3000);
   });
 }
 
-// Preset buttons: click to send
 if (chatPresets && chatPresets.length) {
   chatPresets.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -413,7 +440,6 @@ if (chatPresets && chatPresets.length) {
       if (!q) return;
       appendMessage('user', q);
 
-      // Typing indicator
       const typing = document.createElement('div');
       typing.className = 'message msg-role-assistant typing';
       typing.innerHTML = '<div class="msg-avatar"><img class="msg-avatar-img" src="images/assistant.svg" alt="助手"/></div><div class="msg-bubble"><div class="msg-content"><span class="spinner"></span> 正在思考…</div></div>';
@@ -428,7 +454,7 @@ if (chatPresets && chatPresets.length) {
       setTimeout(() => {
         const answer = generateAnswer(q);
         typing.remove();
-        appendMessage('assistant', answer.text, answer.chartSpec, answer.tableSpec, answer.imageSpec);
+        appendMessage('assistant', answer.text, answer.chartSpec, answer.tableSpec, answer.imageSpec, answer.listSpec);
       }, 3000);
     });
   });
