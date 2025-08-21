@@ -78,23 +78,13 @@ setTimeout(() => {
 ```
 
 ### 修改展品 B（exhibit2.html）中的“基金历史净值（ECharts）”图表
-- 文件位置：`public/content/exhibit2.html`，章节“基金产品历史净值（ECharts）”。
-- 依赖：ECharts 通过 CDN 引入：`<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>`。
-- 可修改项：
-  - 数据生成：`genSeries(点数, 初始净值, 波动幅度)` 与 `ma(data, 窗口)`（移动平均窗口）
-  - 样式：`series[0/1].lineStyle`、`areaStyle` 渐变、`symbol`、`smooth`
-  - 交互：`dataZoom`（缩放）、`tooltip`、`markPoint`（最高/最低）、`markLine`（均值线）
-- 示例片段：
-```js
-const nav = genSeries(180, 1.0000, 0.02);
-const ma20 = ma(nav, 20);
-chart.setOption({
-  xAxis: { data: days },
-  series: [
-    { name: '单位净值 (NAV)', type: 'line', data: nav, areaStyle: { color: gradient } },
-    { name: 'MA20', type: 'line', data: ma20, lineStyle: { type: 'dashed' } }
-  ]
-});
-```
+### 生成并使用静态净值图（ECharts 渲染为 PNG）
+- 生成脚本：`scripts/render_fund_chart.js`（基于 Puppeteer + ECharts 渲染 800x480 PNG）。
+- 生成命令：`npm run render:fund`，输出文件：`public/images/fund_nav.png`。
+- 页面使用：`public/content/exhibit2.html` 章节“基金产品历史净值（静态图）”直接用 `<img src="../images/fund_nav.png" />` 引用，适合无 JS 场景或追求加载稳定性。
+- 修改方法：
+  - 在脚本中调整数据点数/波动：`genSeries(N, 初值, 波动)`，移动平均窗口：`ma(data, 窗口)`；
+  - 调整配色与样式：`series` 的 `lineStyle/areaStyle`、`markPoint/markLine`；
+  - 修改画布尺寸：修改 `page.setViewport({ width, height, deviceScaleFactor })`。
 
 # Luojuanyun

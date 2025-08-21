@@ -5,10 +5,12 @@
   "description": "Local frontend app with content loader, chat, and charts",
   "license": "MIT",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "render:fund": "node scripts/render_fund_chart.js"
   },
   "dependencies": {
     "chart.js": "^4.5.0",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "puppeteer": "^23.4.0"
   }
 }
